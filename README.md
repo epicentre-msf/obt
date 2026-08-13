@@ -1,2 +1,2 @@
-# obt-R
+# obt
 R wrapper to OBT designer and linelist buttons.
