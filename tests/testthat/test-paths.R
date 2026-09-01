@@ -241,7 +241,10 @@ test_that("a path is written with one shape of separator", {
   expect_identical(absolute_path("/work/geo/"), "/work/geo")
   expect_identical(absolute_path("/work/geo/."), "/work/geo")
   expect_identical(absolute_path("/"), "/")
-  expect_identical(absolute_path("~"), path.expand("~"))
+  expect_identical(
+    absolute_path("~"),
+    gsub("\\", "/", path.expand("~"), fixed = TRUE)
+  )
 })
 
 test_that("the three shapes of an absolute path are known", {
