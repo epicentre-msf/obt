@@ -125,6 +125,8 @@ test_that("an id is as wide as the count needs, unless it is told otherwise", {
 # The run -------------------------------------------------------------------
 
 test_that("the run writes one sheet per worksheet of the setup", {
+  skip_if_no_run()
+
   folder <- withr::local_tempdir()
   recipe <- fake_committed_setup(folder) |> obt_fake(n = 6, seed = 1)
 
@@ -143,6 +145,8 @@ test_that("the run writes one sheet per worksheet of the setup", {
 })
 
 test_that("a horizontal worksheet holds one record a row", {
+  skip_if_no_run()
+
   folder <- withr::local_tempdir()
 
   invisible(obt_commit(
@@ -160,6 +164,8 @@ test_that("a horizontal worksheet holds one record a row", {
 })
 
 test_that("a vertical worksheet holds one record, laid out down the page", {
+  skip_if_no_run()
+
   folder <- withr::local_tempdir()
 
   invisible(obt_commit(
@@ -177,6 +183,8 @@ test_that("a vertical worksheet holds one record, laid out down the page", {
 })
 
 test_that("one seed answers one set of records", {
+  skip_if_no_run()
+
   first <- withr::local_tempdir()
   second <- withr::local_tempdir()
 
@@ -194,6 +202,8 @@ test_that("one seed answers one set of records", {
 })
 
 test_that("a run under a seed leaves the session's own draws alone", {
+  skip_if_no_run()
+
   folder <- withr::local_tempdir()
   recipe <- fake_committed_setup(folder) |> obt_fake(n = 3, seed = 7)
 
@@ -206,6 +216,8 @@ test_that("a run under a seed leaves the session's own draws alone", {
 })
 
 test_that("a file already written is left alone unless the verb says so", {
+  skip_if_no_run()
+
   folder <- withr::local_tempdir()
   setup <- fake_committed_setup(folder)
 
@@ -224,6 +236,8 @@ test_that("a file already written is left alone unless the verb says so", {
 })
 
 test_that("a working folder with no setup says so", {
+  skip_if_no_run()
+
   folder <- withr::local_tempdir()
 
   expect_error(
@@ -233,6 +247,8 @@ test_that("a working folder with no setup says so", {
 })
 
 test_that("the dates of a run stay inside the bounds the setup wrote", {
+  skip_if_no_run()
+
   folder <- withr::local_tempdir()
 
   invisible(obt_commit(
@@ -254,6 +270,8 @@ test_that("the dates of a run stay inside the bounds the setup wrote", {
 })
 
 test_that("the ids of a run are numbered and padded", {
+  skip_if_no_run()
+
   folder <- withr::local_tempdir()
 
   invisible(obt_commit(
@@ -274,6 +292,8 @@ test_that("the ids of a run are numbered and padded", {
 # The geobase ---------------------------------------------------------------
 
 test_that("without a geobase the geo columns are there and empty", {
+  skip_if_no_run()
+
   folder <- withr::local_tempdir()
 
   invisible(obt_commit(
@@ -291,6 +311,8 @@ test_that("without a geobase the geo columns are there and empty", {
 })
 
 test_that("a geobase in the working folder fills the geo columns", {
+  skip_if_no_run()
+
   folder <- withr::local_tempdir()
   setup <- fake_committed_setup(folder)
   fake_geobase_file(file.path(folder, "geo"))
@@ -327,6 +349,8 @@ test_that("every level of a geobase is drawn from as much as any other", {
 })
 
 test_that("a folder holding two geobases says which one to name", {
+  skip_if_no_run()
+
   folder <- withr::local_tempdir()
   setup <- fake_committed_setup(folder)
 

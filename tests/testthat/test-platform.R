@@ -265,7 +265,7 @@ test_that("the guard refuses anything that is not a recipe", {
 # Reading the version of Excel -------------------------------------------
 
 test_that("the version is read off the application bundle", {
-  skip_on_os("windows")
+  skip_if_not_macos()
 
   app <- test_excel_app(withr::local_tempdir(), "16.111")
 
@@ -273,7 +273,7 @@ test_that("the version is read off the application bundle", {
 })
 
 test_that("another version is read as it stands", {
-  skip_on_os("windows")
+  skip_if_not_macos()
 
   app <- test_excel_app(withr::local_tempdir(), "16.104")
 
@@ -304,7 +304,7 @@ test_that("a machine with Excel on it is read as supported", {
 
 test_that("the version on this machine reads as a version", {
   skip_if_no_excel()
-  skip_on_os("windows")
+  skip_if_not_macos()
 
   expect_match(obt_platform()$excel_version, "^[0-9]+\\.[0-9]+")
 })

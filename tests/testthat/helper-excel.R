@@ -34,3 +34,16 @@ skip_if_no_excel <- function() {
   testthat::skip_on_os(c("linux", "solaris"))
   testthat::skip_if(!has_excel(), "Excel is not installed on this machine")
 }
+
+# The skip a test that runs a recipe opens with. `obt_commit()` is turned down
+# on a system that cannot open Excel, so a run cannot be reached there at all,
+# even where the operations of that run never open a workbook.
+skip_if_no_run <- function() {
+  testthat::skip_on_os(c("linux", "solaris"))
+}
+
+# The skip a test of the macOS version reader opens with. The reader asks
+# PlistBuddy for the version, and PlistBuddy ships with macOS alone.
+skip_if_not_macos <- function() {
+  testthat::skip_on_os(c("windows", "linux", "solaris"))
+}
