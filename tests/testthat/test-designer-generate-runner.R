@@ -359,9 +359,13 @@ test_that("a run that wrote no linelist stops the run", {
   )
 })
 
-test_that("generation is still refused by a run, and says what it needs", {
+test_that("a run refuses a waiting generation, and says what it needs", {
   folder <- withr::local_tempdir()
   local_run_machine()
+  local_waiting_type(
+    "designer-generate",
+    needs = "silence, and a summary a script can read"
+  )
 
   recipe <- obt(folder = folder) |>
     obt_designer_generate(name = "measles-2026")

@@ -7,7 +7,7 @@ test_that("the geobase import records the file it will read", {
 
   expect_identical(operation$type, "linelist-geobase")
   expect_identical(operation$args$path, "geobase.xlsx")
-  expect_true(operation$waiting)
+  expect_false(operation$waiting)
 })
 
 test_that("a geobase the verb cannot find is refused", {
@@ -31,7 +31,7 @@ test_that("the migration import records the file, the rule and the flag", {
   expect_identical(operation$args$from, "cases-from-the-field.xlsx")
   expect_identical(operation$args$rule, "append")
   expect_false(operation$args$force)
-  expect_true(operation$waiting)
+  expect_false(operation$waiting)
 })
 
 test_that("append is the rule a recipe takes when none is named", {

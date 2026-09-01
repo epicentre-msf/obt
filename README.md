@@ -123,19 +123,16 @@ obt_describe(run)
 #>    force: FALSE
 #> 2. Add the setup to convert `convert-add`
 #>    from: "setup.xlsb"
-#> 3. Write the old setup out `convert-export` (waiting on the workbooks)
-#>    Needs: an entry point a script can call
+#> 3. Write the old setup out `convert-export`
 #>    to: "export"
-#> 4. Fill the new setup `convert-import` (waiting on the workbooks)
-#>    Needs: an entry point a script can call
+#> 4. Fill the new setup `convert-import`
 #>    overwrite: FALSE
 #> 5. Add a geobase `designer-geobase`
 #>    path: "geobase.xlsx"
 #> 6. Set the languages `designer-languages`
 #>    dict: "English"
 #>    form: "ENG"
-#> 7. Generate the linelist `designer-generate` (waiting on the workbooks)
-#>    Needs: silence, and a summary a script can read
+#> 7. Generate the linelist `designer-generate`
 #>    name: "measles-2026"
 #>    overwrite: FALSE
 ```
@@ -144,9 +141,8 @@ obt_describe(run)
 finished <- obt_commit(run)
 ```
 
-A verb called by mistake comes back out. `obt_remove()` takes one step,
-named by the number or the type the description prints beside it, and
-`obt_pop()` takes the last one off.
+`obt_remove()` removes one step, named by the step number its
+description. `obt_pop()` removes the last one.
 
 ``` r
 obt_remove(run, step = "designer-geobase") |>
@@ -157,12 +153,9 @@ obt_remove(run, step = "designer-geobase") |>
 #> 1. Download the OutbreakTools files and unzip them `designer-add`
 #> 2. Copy the old setup in and leave the file as it is `convert-add`
 #> 3. Run the old setup's own export to get an .xlsx file `convert-export`
-#>    (waiting on the workbooks)
 #> 4. Read the .xlsx into a fresh copy of the empty setup `convert-import`
-#>    (waiting on the workbooks)
 #> 5. Carry the setup and interface languages into the run `designer-languages`
 #> 6. Fill the designer's Main sheet and generate the linelist `designer-generate`
-#>    (waiting on the workbooks)
 ```
 
 `obt_commit()` runs the operations in the order the verbs recorded them,
@@ -201,11 +194,9 @@ obt_linelist(from = "measles-2026.xlsb", folder = "measles-2026") |>
 #> 1. Add the linelist `linelist-add`
 #>    from: "measles-2026.xlsb"
 #>    overwrite: FALSE
-#> 2. Import a geobase `linelist-geobase` (waiting on the workbooks)
-#>    Needs: an entry point a script can call
+#> 2. Import a geobase `linelist-geobase`
 #>    path: "geobase.xlsx"
-#> 3. Import a migrated file `linelist-import` (waiting on the workbooks)
-#>    Needs: an entry point a script can call
+#> 3. Import a migrated file `linelist-import`
 #>    from: "cases.xlsx"
 #>    rule: "append"
 #>    force: FALSE

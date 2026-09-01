@@ -119,8 +119,9 @@ run <- run |>
 
 Three functions read a recipe.
 
-`obt_summary()` is the one line: the folder, the count, and how many
-operations are waiting on the workbooks.
+`obt_summary()` is the one line: the folder, the count, and whether every
+operation can run. An operation written before the workbooks carry its entry
+point is counted here as waiting instead; nothing waits today.
 
 ```{r summary}
 obt_summary(run)

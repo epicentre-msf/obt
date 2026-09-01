@@ -125,9 +125,9 @@ obt_describe(run)
 finished <- obt_commit(run)
 ```
 
-A verb called by mistake comes back out. `obt_remove()` takes one step, named
-by the number or the type the description prints beside it, and `obt_pop()`
-takes the last one off.
+`obt_remove()` removes one step, named
+by the step number its description. `obt_pop()`
+removes the last one.
 
 ```{r remove}
 obt_remove(run, step = "designer-geobase") |>

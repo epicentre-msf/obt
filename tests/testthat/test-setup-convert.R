@@ -59,15 +59,15 @@ test_that("the import carries the overwrite flag it was given", {
   expect_true(operation_at(recipe, 4)$args$overwrite)
 })
 
-test_that("the copy runs today and the two Excel steps wait", {
+test_that("all three steps of a conversion run today", {
   folder <- withr::local_tempdir()
   old <- old_setup(folder)
 
   recipe <- convert_recipe(folder) |> obt_setup_convert(from = old)
 
   expect_false(operation_at(recipe, 2)$waiting)
-  expect_true(operation_at(recipe, 3)$waiting)
-  expect_true(operation_at(recipe, 4)$waiting)
+  expect_false(operation_at(recipe, 3)$waiting)
+  expect_false(operation_at(recipe, 4)$waiting)
 })
 
 test_that("a recipe with no designer is refused at the verb", {
@@ -194,6 +194,7 @@ test_that("a recipe holding a conversion is turned down before it runs", {
   folder <- withr::local_tempdir()
   old <- old_setup(folder)
   local_run_machine()
+  local_waiting_type("convert-export")
 
   expect_error(
     convert_recipe(folder) |>

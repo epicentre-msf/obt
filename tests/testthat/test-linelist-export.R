@@ -8,7 +8,7 @@ test_that("a migration export records its kind and the folder it writes to", {
   expect_identical(operation$args$type, "migration")
   expect_null(operation$args$name)
   expect_identical(operation$args$to, "export")
-  expect_true(operation$waiting)
+  expect_false(operation$waiting)
 })
 
 test_that("migration is the kind a recipe takes when none is named", {
@@ -209,6 +209,7 @@ test_that("a password is hidden wherever a recipe is printed", {
 
 test_that("a waiting export prints what a release has to carry", {
   folder <- withr::local_tempdir()
+  local_waiting_type("linelist-export")
 
   said <- printed(linelist_recipe(folder) |> obt_linelist_export() |> print())
 
@@ -512,6 +513,7 @@ test_that("a run with no linelist to write out of stops and names the verb", {
 test_that("the export is refused before Excel opens while it is waiting", {
   folder <- withr::local_tempdir()
   local_run_machine()
+  local_waiting_type("linelist-export")
 
   expect_error(
     linelist_recipe(folder) |> obt_linelist_export() |> obt_commit(),

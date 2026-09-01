@@ -9,7 +9,7 @@ test_that("generating records the name and the overwrite setting", {
     operation$args,
     list(name = "measles-2026", overwrite = FALSE)
   )
-  expect_true(operation$waiting)
+  expect_false(operation$waiting)
 })
 
 test_that("overwrite is carried as it was given", {

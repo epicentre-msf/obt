@@ -6,7 +6,7 @@ test_that("the export records the folder it will write into", {
 
   expect_identical(operation$type, "setup-export")
   expect_identical(operation$args$to, "export")
-  expect_true(operation$waiting)
+  expect_false(operation$waiting)
 })
 
 test_that("the export takes a folder of its own", {
@@ -46,7 +46,7 @@ test_that("the import records the file it will read", {
 
   expect_identical(operation$type, "setup-import")
   expect_identical(operation$args$from, "content.xlsx")
-  expect_true(operation$waiting)
+  expect_false(operation$waiting)
 })
 
 test_that("a file the import cannot find is refused at the verb", {
@@ -90,7 +90,7 @@ test_that("the tag verb records one operation with no argument", {
 
   expect_identical(operation$type, "setup-tags")
   expect_identical(operation$args, list())
-  expect_true(operation$waiting)
+  expect_false(operation$waiting)
 })
 
 test_that("the three verbs chain and keep their order", {
@@ -122,6 +122,7 @@ test_that("something that is no recipe at all is refused", {
 
 test_that("the three verbs print as waiting on the workbooks", {
   folder <- withr::local_tempdir()
+  local_waiting_type(c("setup-tags", "setup-export"))
 
   recipe <- setup_recipe(folder) |>
     obt_setup_tags() |>
@@ -135,6 +136,7 @@ test_that("the three verbs print as waiting on the workbooks", {
 
 test_that("the description says what each setup verb waits for", {
   folder <- withr::local_tempdir()
+  local_waiting_type("setup-tags")
 
   out <- printed(obt_describe(setup_recipe(folder) |> obt_setup_tags()))
 
@@ -145,6 +147,7 @@ test_that("the description says what each setup verb waits for", {
 test_that("a setup recipe holding a waiting verb is turned down up front", {
   folder <- withr::local_tempdir()
   local_run_machine()
+  local_waiting_type("setup-tags")
 
   expect_error(
     setup_recipe(folder) |> obt_setup_tags() |> obt_commit(verbose = FALSE),

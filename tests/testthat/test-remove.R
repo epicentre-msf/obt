@@ -240,6 +240,8 @@ test_that("both lists print the type of every step", {
 })
 
 test_that("a waiting step prints its type and its wait", {
+  local_waiting_type("designer-generate")
+
   said <- printed(obt_describe(three_step_recipe()))
 
   expect_match(said, "designer-generate")

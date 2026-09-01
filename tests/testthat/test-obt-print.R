@@ -1,4 +1,6 @@
 test_that("the summary names the folder, the operations and what waits", {
+  local_waiting_type("designer-generate")
+
   out <- printed(obt_summary(mixed_recipe("/tmp/measles")))
 
   expect_match(out, "OBT recipe")
@@ -7,6 +9,13 @@ test_that("the summary names the folder, the operations and what waits", {
   expect_match(out, "Add the designer")
   expect_match(out, "Generate the linelist")
   expect_match(out, "Waiting on the workbooks: 1 of 3")
+})
+
+test_that("a whole recipe of today's operations says every one can run", {
+  out <- printed(obt_summary(mixed_recipe("/tmp/measles")))
+
+  expect_match(out, "Every operation can run")
+  expect_no_match(out, "Waiting on the workbooks")
 })
 
 test_that("a recipe every operation of which can run says so", {
@@ -42,6 +51,8 @@ test_that("the operations print numbered, in run order", {
 })
 
 test_that("an operation the workbooks cannot run yet prints as waiting", {
+  local_waiting_type("designer-generate")
+
   out <- printed(obt_operations(mixed_recipe("/tmp/measles")))
 
   expect_match(out, "waiting on the workbooks")
@@ -49,6 +60,11 @@ test_that("an operation the workbooks cannot run yet prints as waiting", {
 })
 
 test_that("the description says what a waiting operation waits for", {
+  local_waiting_type(
+    "designer-generate",
+    needs = "silence, and a summary a script can read"
+  )
+
   out <- printed(obt_describe(mixed_recipe("/tmp/measles")))
 
   expect_match(out, "Needs")

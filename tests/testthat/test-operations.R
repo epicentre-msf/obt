@@ -11,11 +11,19 @@ test_that("an operation record carries a type, its arguments and its state", {
   expect_false(operation$waiting)
 })
 
-test_that("an operation the workbooks cannot run yet records as waiting", {
+test_that("an operation whose entry point has yet to ship records as waiting", {
+  local_waiting_type("linelist-export")
+
   recipe <- obt(folder = "/tmp/measles") |>
     add_operation("linelist-export", list(type = "migration"))
 
   expect_true(recipe$operations[[1]]$waiting)
+})
+
+test_that("no operation type waits on the workbooks today", {
+  for (type in names(OBT_OPERATIONS)) {
+    expect_true(is.na(OBT_OPERATIONS[[type]]$waits_on), info = type)
+  }
 })
 
 test_that("an operation R does on its own records as ready", {
@@ -84,14 +92,34 @@ test_that("every operation type is declared the same way", {
   }
 })
 
+test_that("a waiting operation always names the entry point it waits for", {
+  waits <- vapply(
+    OBT_OPERATIONS,
+    function(spec) !is.na(spec$waits_on),
+    logical(1)
+  )
+  named <- vapply(
+    OBT_OPERATIONS,
+    function(spec) !is.na(spec$entry_point),
+    logical(1)
+  )
+
+  expect_true(all(named[waits]))
+})
+
 test_that("an operation with no entry point waits on nothing", {
   for (type in names(OBT_OPERATIONS)) {
     spec <- OBT_OPERATIONS[[type]]
-    expect_identical(is.na(spec$entry_point), is.na(spec$waits_on), info = type)
+
+    if (is.na(spec$entry_point)) {
+      expect_true(is.na(spec$waits_on), info = type)
+    }
   }
 })
 
 test_that("counting the waiting operations counts every one of them", {
+  local_waiting_type(c("setup-export", "linelist-import"))
+
   recipe <- obt(folder = "/tmp/measles") |>
     add_operation("designer-add") |>
     add_operation("setup-export") |>

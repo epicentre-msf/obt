@@ -42,6 +42,7 @@ test_that("a refused system leaves the working folder alone", {
 test_that("an operation waiting on the workbooks stops the run", {
   folder <- file.path(withr::local_tempdir(), "work")
   local_run_machine()
+  local_waiting_type("designer-generate")
 
   recipe <- obt(folder = folder) |>
     obt_designer_generate(name = "measles-2026")
@@ -52,6 +53,7 @@ test_that("an operation waiting on the workbooks stops the run", {
 test_that("a waiting operation is turned down before anything is written", {
   folder <- file.path(withr::local_tempdir(), "work")
   local_run_machine()
+  local_waiting_type("designer-generate")
 
   recipe <- obt(folder = folder) |>
     obt_designer_add(type = "dev") |>
@@ -64,6 +66,7 @@ test_that("a waiting operation is turned down before anything is written", {
 test_that("the refusal names every operation that is waiting", {
   folder <- withr::local_tempdir()
   local_run_machine()
+  local_waiting_type("designer-generate")
 
   recipe <- obt(folder = folder) |>
     obt_designer_generate(name = "measles-2026")

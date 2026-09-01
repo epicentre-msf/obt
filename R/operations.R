@@ -6,8 +6,14 @@
 #
 # `waits_on` is the whole of the readiness question. An entry with `NA` there
 # can run today. An entry with text there records and prints, and the text
-# says what a release has to carry before it can run. Clearing the field is
-# the one edit an operation needs when its entry point ships.
+# says what a release has to carry before it can run. Setting the field is the
+# one edit an operation needs when it is written ahead of its entry point, and
+# clearing it is the one edit it needs when that entry point ships.
+#
+# Nothing waits today. Every entry point the package calls is written on the
+# workbook side, so every type here runs. The field and everything that reads
+# it stay, because the next operation written ahead of its entry point sets it
+# again.
 #
 # `verb` is the call that records the type. `obt_remove()` reads it to name
 # where a step came from, and three types share one verb because a conversion
@@ -40,7 +46,7 @@ OBT_OPERATIONS <- list(
     blurb = "Fill the designer's Main sheet and generate the linelist",
     verb = "obt_designer_generate()",
     entry_point = "clickGenerate",
-    waits_on = "silence, and a summary a script can read"
+    waits_on = NA_character_
   ),
   `setup-add` = list(
     label = "Add the setup",
@@ -54,14 +60,14 @@ OBT_OPERATIONS <- list(
     blurb = "Write the setup out as an .xlsx file",
     verb = "obt_setup_export()",
     entry_point = "RunSetupExport",
-    waits_on = "an entry point a script can call"
+    waits_on = NA_character_
   ),
   `setup-import` = list(
     label = "Import into the setup",
     blurb = "Read an .xlsx file into the working setup",
     verb = "obt_setup_import()",
     entry_point = "RunSetupImportFile",
-    waits_on = "an entry point a script can call"
+    waits_on = NA_character_
   ),
   `setup-fake` = list(
     label = "Make up records",
@@ -75,7 +81,7 @@ OBT_OPERATIONS <- list(
     blurb = "Give every label a tag and make every tag unique",
     verb = "obt_setup_tags()",
     entry_point = "RunSetupTags",
-    waits_on = "an entry point a script can call"
+    waits_on = NA_character_
   ),
   `convert-add` = list(
     label = "Add the setup to convert",
@@ -89,14 +95,14 @@ OBT_OPERATIONS <- list(
     blurb = "Run the old setup's own export to get an .xlsx file",
     verb = "obt_setup_convert()",
     entry_point = "RunSetupExport",
-    waits_on = "an entry point a script can call"
+    waits_on = NA_character_
   ),
   `convert-import` = list(
     label = "Fill the new setup",
     blurb = "Read the .xlsx into a fresh copy of the empty setup",
     verb = "obt_setup_convert()",
     entry_point = "RunSetupImportFile",
-    waits_on = "an entry point a script can call"
+    waits_on = NA_character_
   ),
   `linelist-add` = list(
     label = "Add the linelist",
@@ -110,21 +116,21 @@ OBT_OPERATIONS <- list(
     blurb = "Import a geobase into a generated linelist",
     verb = "obt_linelist_geobase()",
     entry_point = "RunImportGeobase",
-    waits_on = "an entry point a script can call"
+    waits_on = NA_character_
   ),
   `linelist-import` = list(
     label = "Import a migrated file",
     blurb = "Read a file another linelist wrote for migration",
     verb = "obt_linelist_import()",
     entry_point = "RunImportData",
-    waits_on = "an entry point a script can call"
+    waits_on = NA_character_
   ),
   `linelist-export` = list(
     label = "Run an export",
     blurb = "Write an export out of the linelist",
     verb = "obt_linelist_export()",
     entry_point = "RunExport",
-    waits_on = "an entry point a script can call"
+    waits_on = NA_character_
   )
 )
 
