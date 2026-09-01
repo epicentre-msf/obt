@@ -1,0 +1,7 @@
+# Reference of the environment variables obt reads. Set them in a .Renviron at
+# the package root (R loads it at startup) or in your shell. None are required
+# for normal use; the defaults assume the usual side-by-side checkout.
+
+# Path to the outbreak-tools checkout, for developer checks that compare this
+# package against the designer source. Defaults to ../outbreak-tools when unset.
+OBT_SOURCE_DIR=../outbreak-tools

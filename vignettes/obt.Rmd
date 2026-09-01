@@ -1,0 +1,234 @@
+---
+title: "Build a recipe, then run it"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Build a recipe, then run it}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+
+# The examples run in a folder of their own, so the printed output carries
+# short relative paths and stays the same on any machine.
+vignette_dir <- tempfile("obt-vignette")
+dir.create(vignette_dir)
+knitr::opts_knit$set(root.dir = vignette_dir)
+```
+
+```{r setup}
+library(obt)
+```
+
+The `obt` package provides an automated interface to most of the input/output operations done with [outbreak-tools](https://github.com/epicentre-msf/outbreak-tools) files (setup, designer, linelist).
+
+First you build a **recipe**: a working folder and a list of operations, held
+in an ordered R object. Then you read it, correct it, and hand it to
+`obt_commit()`, which is the one function that opens Excel and execute them.
+
+Everything in this vignette runs with no Excel and writes nothing to disk.
+
+## The recipe
+
+`obt()` starts one recipe. It takes the working folder and wait for a list
+of instructions
+
+```{r start}
+run <- obt(folder = "measles-2026")
+run
+```
+
+The folder is recorded here and is created/read when the run starts, 
+so a recipe can be built on a machine where the folder does not exist yet. 
+`obt_paths()` shows the layout the run will use.
+
+```{r paths}
+paths <- obt_paths(run)
+names(paths)
+```
+
+Each verb adds one operation to the recipe. They can chain with the pipe.
+
+## The OutbreakTools files
+
+`obt_designer_add()` records the OutbreakTools folder to use for the operations. There are two main options: `"main"` is the stable
+folder and `"dev"` is the development  one. The folder is a zip with the setup, the designer and other supporting files. The zip is downloaded in the `obt/` at run time, in the working folder.
+
+```{r designer}
+run <- run |>
+  obt_designer_add(type = "main")
+
+run
+```
+
+## A setup, a geobase and a linelist
+
+`obt_setup_convert()` takes a setup workbook you already have and fills a
+fresh copy of the empty setup the release ships. Your own file is an input:
+the run copies it in and works on the copy.
+
+```{r inputs, include = FALSE}
+file.copy(
+  system.file("extdata", "generic-test-setup.xlsb", package = "obt"),
+  "setup.xlsb"
+)
+```
+
+```{r convert}
+run <- run |>
+  obt_setup_convert(from = "setup.xlsb")
+```
+
+A geobase is optional. `obt_designer_geobase()` points the run to the path of a geobase.
+
+```{r geobase}
+invisible(file.create("geobase.xlsx"))
+
+run <- run |>
+  obt_designer_geobase(path = "geobase.xlsx")
+```
+
+Two languages go into a linelist. `dict` is
+the dictionary language, a column of the setup's translation table. `form` is
+the interface language: the buttons, the messages and the sheet names.
+
+```{r languages}
+run <- run |>
+  obt_designer_languages(dict = "English", form = "ENG")
+```
+
+`obt_setup_languages()` reads the dictionary languages a setup file holds.
+
+```{r setup-languages}
+obt_setup_languages("setup.xlsb")
+```
+
+Last, the linelist itself. `name` is the name of the file the designer writes
+under `linelist/`.
+
+```{r generate}
+run <- run |>
+  obt_designer_generate(name = "measles-2026")
+```
+
+## Read the recipe before it runs
+
+Three functions read a recipe.
+
+`obt_summary()` is the one line: the folder, the count, and how many
+operations are waiting on the workbooks.
+
+```{r summary}
+obt_summary(run)
+```
+
+`obt_operations()` says what each step will do.
+
+```{r operations}
+obt_operations(run)
+```
+
+`obt_describe()` gives more details: every value the run will use, then every
+operation with its arguments. This is what to look at before Excel opens.
+
+```{r describe}
+obt_describe(run)
+```
+
+## Correct a recipe
+
+You can remove operations with `obt_remove()`. It takes one step, named
+by the step number or a character which is the type of the operation. `obt_pop()` takes
+the last operation off.
+
+```{r remove}
+run |>
+  obt_remove(step = "designer-geobase") |>
+  obt_pop() |>
+  obt_operations()
+```
+
+
+## Work on one workbook
+
+Some operations run inside a single workbook, and each of those workbooks has
+a recipe class of its own. A class holds the verbs that touch that workbook
+and nothing else, so a recipe says which workbook it drives before Excel
+opens.
+
+`obt_setup()` holds a setup. Its three verbs are `obt_setup_export()`, which
+writes the setup out as an `.xlsx`, `obt_setup_import()`, which reads one back
+in, and `obt_setup_tags()`, which updates the translation tags.
+
+```{r setup-recipe}
+obt_setup(from = "setup.xlsb", folder = "measles-2026") |>
+  obt_setup_tags() |>
+  obt_setup_export()
+```
+
+
+`obt_linelist()` holds a linelist that is already built. Its verbs are
+`obt_linelist_geobase()`, which reads a geobase in, `obt_linelist_import()`,
+which reads a file exported by linelist, and `obt_linelist_export()`, which
+writes one out.
+
+```{r linelist-inputs, include = FALSE}
+invisible(file.create("measles-2026.xlsb"))
+invisible(file.create("cases.xlsx"))
+```
+
+```{r linelist-recipe}
+obt_linelist(from = "measles-2026.xlsb", folder = "measles-2026") |>
+  obt_linelist_geobase(path = "geobase.xlsx") |>
+  obt_linelist_import(from = "cases.xlsx") |>
+  obt_describe()
+```
+
+Both take the workbook itself, as above, or an `obt` recipe to narrow. Narrowing keeps the working folder and the operations of that class, and
+leaves the rest behind. A recipe that names no workbook of its own reads the
+one file the working folder holds.
+
+```{r narrowing}
+obt_linelist(run)
+```
+
+## Generate fake datasets
+
+`obt_fake()` reads the setup and create a table of records for every
+worksheet it names, written into one `.xlsx`.
+
+It runs on an `obt` recipe or a setup one, and it is the only verb that opens
+no workbook: the setup is read and the file is written from R, so it works on
+any machine. Give it a `seed` and two runs of the recipe answer the same
+records.
+
+```{r fake-recipe}
+obt_setup(from = "setup.xlsb", folder = "measles-2026") |>
+  obt_fake(n = 200, seed = 1)
+```
+
+## Execute the operations
+
+`obt_commit()` runs the operations in the order the verbs recorded them. It
+creates the working folder, downloads what the recipe asked for, opens Excel
+where an operation needs it, and stops at the first failure with the operation
+and the reason. Every run writes one text log under `log/`.
+
+```{r commit, eval = FALSE}
+finished <- obt_commit(run)
+```
+
+A run can be executed if the platform and the excel versions allow it. `obt_platform()` provides informations about the current run environment: the operating system, and on macOS whether the package can reach Excel's
+own folder. It prints the answer for the machine you are on, together with the
+version of Excel installed and the app your R session runs in.
+
+```{r platform, eval = FALSE}
+obt_platform()
+```
+
+Execution works only on macOS or Windows. Everywhere else a recipe still builds,
+prints and tests, and `obt_commit()` is the one thing that will not run.

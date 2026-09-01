@@ -1,0 +1,59 @@
+# ─── OS / editor ─────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+# Editor settings are local; keep tasks.json and the dev scripts tracked.
+.vscode/settings.json
+*.swp
+*~
+
+# ─── R / RStudio ─────────────────────────────────────────────────────────
+.Rhistory
+.Rapp.history
+.Rproj.user/
+.RData
+.Ruserdata
+.Renviron
+.Rprofile.user
+.httr-oauth
+
+# Build output
+*.tar.gz
+..Rcheck/
+*.Rcheck/
+
+# renv
+renv/library/
+renv/local/
+renv/cellar/
+renv/staging/
+
+# ─── quarto ───────────────────────────────────────────────────
+_freeze/
+inst/doc/
+
+# ─── Excel (large + rebuildable) ────────────────────────────────────────
+*.xlsm
+*.xlsb
+~$*
+# but any small fixture workbook the tests read does ship with the package
+!inst/extdata/*.xlsm
+!inst/extdata/*.xlsb
+
+# ─── Logs ───────────────────────────────────────────────────────────────
+*.log
+
+# ─── Secrets ────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+secrets/
+
+# ─── Agents ─────────────────────────────────────────────────────────────
+.r-agent/
+.draft/
+.claude/
+
+# ─── Documentation ──────────────────────────────────────────────────────
+/doc/
+/Meta/

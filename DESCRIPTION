@@ -1,0 +1,39 @@
+Package: obt
+Title: Drive the OutbreakTools Designer and Linelist from R
+Version: 0.0.0.9000
+Authors@R:
+    person("Komlavi Yves", "Amevoin", , "Yves.Amevoin@akyves.net",
+           role = c("aut", "cre"))
+Description: An R wrapper around the OutbreakTools designer and the linelist
+    workbook buttons, so the steps normally driven from the Excel interface
+    can be scripted from R.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Depends:
+    R (>= 4.3)
+Imports:
+    cli,
+    readxl,
+    readxlsb,
+    rlang,
+    stats,
+    tools,
+    utils,
+    writexl
+Suggests:
+    knitr,
+    rmarkdown,
+    testthat (>= 3.2.0),
+    withr
+Remotes:
+    velofrog/readxlsb
+Config/testthat/edition: 3
+VignetteBuilder: knitr
+Config/Needs/development: devtools
+SystemRequirements: Microsoft Excel, on macOS or on Windows, for the
+    operations that open a workbook. On any other system the package loads
+    and recipes build and print, and obt_commit() is turned down.
+URL: https://github.com/epicentre-msf/obt
+BugReports: https://github.com/epicentre-msf/obt/issues
+Config/roxygen2/version: 8.1.0
