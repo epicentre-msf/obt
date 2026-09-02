@@ -103,11 +103,12 @@ test_that("a write carries the value across to the script", {
   )
 
   # The Windows runner puts its own lead in front of the script, so every
-  # value the pair takes sits one further along than it does on macOS.
+  # value the pair takes sits one further along than it does on macOS. Every
+  # path crosses to the script on the system's own separator.
   expect_identical(runs$seen$command, "cscript")
   expect_identical(runs$seen$args[[1]], "//nologo")
   expect_match(runs$seen$args[[2]], "quiet\\.vbs$")
-  expect_identical(runs$seen$args[[3]], "C:/work/measles-2026.xlsb")
+  expect_identical(runs$seen$args[[3]], "C:\\work\\measles-2026.xlsb")
   expect_identical(runs$seen$args[[5]], "write")
   expect_identical(runs$seen$args[[6]], SILENT_ON)
 })
