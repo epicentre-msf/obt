@@ -141,7 +141,7 @@ obt_describe(run)
 finished <- obt_commit(run)
 ```
 
-`obt_remove()` removes one step, named by the step number its
+`obt_remove()` removes one step, named by the step number or its
 description. `obt_pop()` removes the last one.
 
 ``` r

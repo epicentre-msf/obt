@@ -249,12 +249,41 @@ driver_script <- function(pair, os = os_name(), call = rlang::caller_env()) {
 #' @noRd
 driver_command <- function(script, args, os = os_name()) {
   runner <- DRIVER_RUNNERS[[os]]
-  parts <- c(runner$lead, script, args)
+  parts <- driver_separators(c(runner$lead, script, args), os = os)
 
   list(
     command = runner$command,
     args = driver_quote(parts, os = os)
   )
+}
+
+#' Turn the paths of one call onto the separator of the system reading them
+#'
+#' R keeps every path on forward slashes, and `absolute_path()` makes it so
+#' on both systems. Excel on Windows joins whatever base it is given with
+#' `\`, so a `/` path handed to the designer comes back mangled the first
+#' time the workbook builds a path under it, and Excel refuses the result.
+#' The values cross to the scripts here, so the separators turn native here.
+#'
+#' A path is known by its drive lead (`C:/`). Every path a script takes is
+#' absolute, so the lead marks all of them, and names, languages, switches
+#' and empty strings pass through as they are. macOS reads `/` natively and
+#' gets every value as it is.
+#'
+#' @param value The values of one call.
+#' @param os The operating system.
+#'
+#' @return The values, with every path on the system's own separator.
+#' @noRd
+driver_separators <- function(value, os) {
+  if (!identical(os, "windows")) {
+    return(value)
+  }
+
+  path <- grepl("^[A-Za-z]:/", value)
+  value[path] <- gsub("/", "\\", value[path], fixed = TRUE)
+
+  value
 }
 
 #' Quote a value for the command line of one system
@@ -451,7 +480,7 @@ read_summary <- function(path) {
     return(empty)
   }
 
-  lines <- readLines(path, warn = FALSE)
+  lines <- summary_lines(path)
   marker <- match(SUMMARY_MARKER, trimws(lines))
   cut <- if (is.na(marker)) length(lines) + 1L else marker
 
@@ -504,6 +533,57 @@ summary_finished <- function(read) {
   }
 
   identical(toupper(trimws(outcome)), SUMMARY_OUTCOME_OK)
+}
+
+#' Read the lines of a summary in the encoding they were written
+#'
+#' Excel writes the summary in the system's own ANSI codepage on Windows and
+#' in UTF-8 on macOS. A line that already reads as UTF-8 passes through as it
+#' is. A line that does not is turned to UTF-8 from that codepage, and a byte
+#' with no mapping crosses as its hex escape, so the text Excel wrote stays
+#' readable either way.
+#'
+#' @param path The summary file.
+#'
+#' @return The lines, every one of them valid UTF-8.
+#' @noRd
+summary_lines <- function(path) {
+  lines <- readLines(path, warn = FALSE)
+  broken <- !validUTF8(lines)
+
+  if (any(broken)) {
+    lines[broken] <- iconv(
+      lines[broken],
+      from = summary_codepage(),
+      to = "UTF-8",
+      sub = "byte"
+    )
+  }
+
+  lines
+}
+
+#' The codepage Excel writes the summary in
+#'
+#' Windows answers its ANSI codepage through `l10n_info()`. Everywhere else,
+#' and on a Windows whose own codepage is already UTF-8, latin1 stands in:
+#' it accepts every byte, so a summary always reads.
+#'
+#' @return An encoding name `iconv()` accepts.
+#' @noRd
+summary_codepage <- function() {
+  info <- l10n_info()
+  codepage <- info$system.codepage
+
+  if (is.null(codepage)) {
+    codepage <- info$codepage
+  }
+
+  if (is.null(codepage) || isTRUE(codepage == 65001)) {
+    return("latin1")
+  }
+
+  paste0("CP", codepage)
 }
 
 #' Read the `key=value` lines of a summary

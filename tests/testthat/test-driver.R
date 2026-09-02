@@ -110,7 +110,26 @@ test_that("the Windows command line runs cscript with the script quoted", {
   expect_identical(command$command, "cscript")
   expect_identical(
     command$args,
-    c("\"//nologo\"", "\"C:/obt/generate.vbs\"", "\"a b\"", "\"\"")
+    c("\"//nologo\"", "\"C:\\obt\\generate.vbs\"", "\"a b\"", "\"\"")
+  )
+})
+
+test_that("Windows hands every path over on its own separator", {
+  command <- driver_command(
+    "C:/obt/generate.vbs",
+    c("D:/work/designer.xlsb", "measles-2026", ""),
+    "windows"
+  )
+
+  expect_identical(
+    command$args,
+    c(
+      "\"//nologo\"",
+      "\"C:\\obt\\generate.vbs\"",
+      "\"D:\\work\\designer.xlsb\"",
+      "\"measles-2026\"",
+      "\"\""
+    )
   )
 })
 
@@ -419,6 +438,49 @@ test_that("a summary file is read as values, then free text", {
     read$report,
     c("The build finished.", "Nothing was skipped.")
   )
+})
+
+test_that("a summary in the Windows codepage is read whole", {
+  folder <- withr::local_tempdir()
+  path <- summary_path(folder, "measles-2026")
+
+  # The bullet Excel writes in its own error text: byte 0x95 in the ANSI
+  # codepage, an invalid byte when the file is read as UTF-8.
+  con <- file(path, open = "wb")
+  writeLines(
+    c(
+      "outcome=ERROR 1004: cannot access the file 'OBTApp_'.",
+      "",
+      "\x95 The file name or path does not exist.",
+      SUMMARY_MARKER,
+      "\x95 The build gave up."
+    ),
+    con,
+    useBytes = TRUE
+  )
+  close(con)
+
+  read <- read_summary(path)
+
+  expect_true(read$found)
+  expect_match(read$values[["outcome"]], "^ERROR 1004")
+  expect_length(read$report, 1)
+  expect_true(all(validUTF8(read$values)))
+  expect_true(all(validUTF8(read$report)))
+})
+
+test_that("a summary already in UTF-8 keeps its text", {
+  folder <- withr::local_tempdir()
+  path <- summary_path(folder, "measles-2026")
+  writeLines(
+    c("linelist=déjà.xlsb", SUMMARY_MARKER, "déjà vu"),
+    path
+  )
+
+  read <- read_summary(path)
+
+  expect_identical(read$values[["linelist"]], "déjà.xlsb")
+  expect_identical(read$report, "déjà vu")
 })
 
 test_that("a summary file with no marker is all values", {
