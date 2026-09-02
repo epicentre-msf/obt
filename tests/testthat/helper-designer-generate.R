@@ -121,3 +121,20 @@ generation_operation <- function(name = "measles-2026", overwrite = FALSE) {
 generation_state <- function(dict = "English", form = "ENG", ...) {
   c(list(dict = dict, form = form), list(...))
 }
+
+# Keeping the build-in-place word quiet for the length of a test.
+#
+# `set_build_in_place()` says the word once per session, and it says it on
+# Windows alone. A test that drives a generation on Windows therefore carries
+# a warning about a flag it never looks at, and the same test on macOS carries
+# nothing. Marking the word as already said makes every generation test read
+# the same on both systems.
+#
+# The word itself is covered by the tests that call `set_build_in_place()` on
+# its own, and the call the run makes is covered by the test that mocks it.
+local_build_in_place_said <- function(.env = parent.frame()) {
+  withr::defer(reset_platform_state(), envir = .env)
+  platform_state$warned_build_in_place <- TRUE
+
+  invisible(TRUE)
+}

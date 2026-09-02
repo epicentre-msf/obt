@@ -1,4 +1,5 @@
 test_that("the run hands the designer every value it reads", {
+  local_build_in_place_said()
   folder <- withr::local_tempdir()
   recipe <- generation_folder(folder)
   driver <- test_generation()
@@ -20,6 +21,7 @@ test_that("the run hands the designer every value it reads", {
 })
 
 test_that("the linelist is written into the linelist folder", {
+  local_build_in_place_said()
   folder <- withr::local_tempdir()
   recipe <- generation_folder(folder)
   driver <- test_generation()
@@ -36,6 +38,7 @@ test_that("the linelist is written into the linelist folder", {
 })
 
 test_that("the run answers the files it produced", {
+  local_build_in_place_said()
   folder <- withr::local_tempdir()
   recipe <- generation_folder(folder)
   driver <- test_generation()
@@ -54,6 +57,7 @@ test_that("the run answers the files it produced", {
 })
 
 test_that("the counts of the run are kept for the record", {
+  local_build_in_place_said()
   folder <- withr::local_tempdir()
   recipe <- generation_folder(folder)
   driver <- test_generation()
@@ -73,6 +77,7 @@ test_that("the counts of the run are kept for the record", {
 })
 
 test_that("a run with no designer stops and names the verb", {
+  local_build_in_place_said()
   folder <- withr::local_tempdir()
   recipe <- generation_folder(folder, designer = FALSE)
   driver <- test_generation()
@@ -91,6 +96,7 @@ test_that("a run with no designer stops and names the verb", {
 })
 
 test_that("a designer already in the folder is used", {
+  local_build_in_place_said()
   folder <- withr::local_tempdir()
   recipe <- generation_folder(folder, channel = "main")
   driver <- test_generation()
@@ -107,6 +113,7 @@ test_that("a designer already in the folder is used", {
 })
 
 test_that("the designer the recipe added wins over the one on disk", {
+  local_build_in_place_said()
   folder <- withr::local_tempdir()
   recipe <- generation_folder(folder)
   chosen <- file.path(folder, "obt", "dev", "designer_dev-2.1.0.xlsb")
@@ -126,6 +133,7 @@ test_that("the designer the recipe added wins over the one on disk", {
 })
 
 test_that("two designers on disk stop the run", {
+  local_build_in_place_said()
   folder <- withr::local_tempdir()
   recipe <- generation_folder(folder)
   generation_folder(folder, channel = "main", setup = FALSE)
@@ -142,6 +150,7 @@ test_that("two designers on disk stop the run", {
 })
 
 test_that("a run with no setup stops and says where it looked", {
+  local_build_in_place_said()
   folder <- withr::local_tempdir()
   recipe <- generation_folder(folder, setup = FALSE)
 
@@ -157,6 +166,7 @@ test_that("a run with no setup stops and says where it looked", {
 })
 
 test_that("a run with no dictionary language stops and names the verb", {
+  local_build_in_place_said()
   folder <- withr::local_tempdir()
   recipe <- generation_folder(folder)
 
@@ -172,6 +182,7 @@ test_that("a run with no dictionary language stops and names the verb", {
 })
 
 test_that("a run with no interface language stops", {
+  local_build_in_place_said()
   folder <- withr::local_tempdir()
   recipe <- generation_folder(folder)
 
@@ -187,6 +198,7 @@ test_that("a run with no interface language stops", {
 })
 
 test_that("a linelist already there stops the run", {
+  local_build_in_place_said()
   folder <- withr::local_tempdir()
   recipe <- generation_folder(folder)
   ensure_folder(obt_paths(recipe)$linelist)
@@ -204,6 +216,7 @@ test_that("a linelist already there stops the run", {
 })
 
 test_that("overwrite lets the run write over a linelist", {
+  local_build_in_place_said()
   folder <- withr::local_tempdir()
   recipe <- generation_folder(folder)
   ensure_folder(obt_paths(recipe)$linelist)
@@ -227,6 +240,7 @@ test_that("overwrite lets the run write over a linelist", {
 })
 
 test_that("a run with no geobase and no ribbon hands neither over", {
+  local_build_in_place_said()
   folder <- withr::local_tempdir()
   recipe <- generation_folder(folder)
   driver <- test_generation()
@@ -244,6 +258,7 @@ test_that("a run with no geobase and no ribbon hands neither over", {
 })
 
 test_that("a geobase and a ribbon the recipe holds are handed over", {
+  local_build_in_place_said()
   folder <- withr::local_tempdir()
   recipe <- generation_folder(folder, ribbon = TRUE)
   ribbon <- file.path(
@@ -272,6 +287,7 @@ test_that("a geobase and a ribbon the recipe holds are handed over", {
 })
 
 test_that("a summary naming another linelist stops the run", {
+  local_build_in_place_said()
   folder <- withr::local_tempdir()
   recipe <- generation_folder(folder)
   driver <- test_generation(values = c(linelist = "something-else.xlsb"))
@@ -289,6 +305,7 @@ test_that("a summary naming another linelist stops the run", {
 })
 
 test_that("a summary naming no linelist warns and carries on", {
+  local_build_in_place_said()
   folder <- withr::local_tempdir()
   recipe <- generation_folder(folder)
   driver <- test_generation(values = c(sheets = "12"))
@@ -308,6 +325,7 @@ test_that("a summary naming no linelist warns and carries on", {
 })
 
 test_that("a build that gave up on part of the work says so", {
+  local_build_in_place_said()
   folder <- withr::local_tempdir()
   recipe <- generation_folder(folder)
   driver <- test_generation(
@@ -327,6 +345,7 @@ test_that("a build that gave up on part of the work says so", {
 })
 
 test_that("a build with nothing failed says nothing", {
+  local_build_in_place_said()
   folder <- withr::local_tempdir()
   recipe <- generation_folder(folder)
   driver <- test_generation()
@@ -343,6 +362,7 @@ test_that("a build with nothing failed says nothing", {
 })
 
 test_that("a run that wrote no linelist stops the run", {
+  local_build_in_place_said()
   folder <- withr::local_tempdir()
   recipe <- generation_folder(folder)
   driver <- test_generation(writes = FALSE)
