@@ -1,7 +1,7 @@
 # Generating the linelist.
 #
 # This is the operation the package is built around, and the first one that
-# opens Excel. The designer reads seven entries off its `Main` sheet and
+# opens Excel. The designer reads nine entries off its `Main` sheet and
 # writes a linelist beside them. The run fills those entries, stages every
 # file Excel has to open, fires the generation callback, and reads the run
 # back off the summary the designer answers.
@@ -25,7 +25,7 @@ GENERATION_FAILED_KEY <- "failed"
 
 #' Generate the linelist
 #'
-#' Fills the seven entries of the designer's `Main` sheet, runs the generation
+#' Fills the nine entries of the designer's `Main` sheet, runs the generation
 #' callback, and reads back what the run produced.
 #'
 #' @param obtops The recipe.
@@ -39,15 +39,24 @@ run_designer_generate <- function(obtops, operation, stage, state) {
   paths <- obt_paths(obtops)
   name <- operation$args$name
   output <- linelist_path(obtops, name)
+  summary <- summary_path(paths$linelist, name)
 
   check_output_free(output, operation$args$overwrite)
 
   designer <- generate_designer(obtops, state)
   setup <- generate_setup(paths)
   languages <- generate_languages(state)
+  password <- optional_text(operation$args$password)
 
   folder <- stage_path(stage, paths$linelist)
   ensure_folder(folder)
+
+  # The summary is the one file a run that stopped leaves behind to say why,
+  # and the stage takes its folder away when the run closes. It is copied
+  # back to the working folder on the way out, whatever stopped the run,
+  # before the stage closes. A run that finished has moved it out already,
+  # and the copy then finds nothing to do.
+  on.exit(stage_keep(stage, summary), add = TRUE)
 
   staged_designer <- stage_in(stage, designer)
   set_build_in_place(staged_designer)
@@ -60,18 +69,16 @@ run_designer_generate <- function(obtops, operation, stage, state) {
     setup_language = languages$dict,
     form_language = languages$form,
     geo = stage_optional(stage, state$geobase),
-    ribbon = stage_optional(stage, state$ribbon)
+    ribbon = stage_optional(stage, state$ribbon),
+    password = password,
+    debug_password = optional_text(operation$args$debug_password)
   )
 
   check_generation(ran, name = name)
 
   produced <- c(
     linelist = stage_out(stage, output),
-    summary = stage_out(
-      stage,
-      summary_path(paths$linelist, name),
-      required = FALSE
-    ),
+    summary = stage_out(stage, summary, required = FALSE),
     log = stage_generation_log(stage, ran, folder = paths$linelist)
   )
 
@@ -79,6 +86,7 @@ run_designer_generate <- function(obtops, operation, stage, state) {
     produced = produced[!is.na(produced)],
     state = list(
       linelist = unname(produced[[GENERATION_OUTPUT_KEY]]),
+      linelist_password = password,
       counts = generation_counts(ran$summary)
     )
   )

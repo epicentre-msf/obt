@@ -1,15 +1,18 @@
 'quiet.vbs
 'Read or write the open-time switch on one workbook.
 '
-'  cscript //nologo quiet.vbs <workbook> <switch> <action> <value> <summary>
+'  cscript //nologo quiet.vbs <workbook> <password> <switch> <action> <value> <summary>
 '
-'The five arguments are the same, in the same order, as quiet.applescript.
-'The workbook and the summary are absolute paths. <action> is read or write,
-'and on a read <value> arrives as an empty string.
+'The six arguments are the same, in the same order, as quiet.applescript.
+'The workbook and the summary are absolute paths. <password> is what the
+'workbook opens with, and arrives as an empty string for a workbook that
+'opens with none. <action> is read or write, and on a read <value> arrives as
+'an empty string.
 '
 'The switch is a workbook-level defined name. Its value is held as a formula,
 '="Yes" or ="No", which is the shape the workbooks store a string in and the
-'shape they read back.
+'shape they read back. A workbook whose structure is protected still takes
+'the name, so the open password is the one password this run needs.
 '
 'The workbook is opened with the events off, so the code a workbook runs while
 'it opens stays out of the way. The boxes that code shows are what the switch
@@ -18,6 +21,9 @@
 'One line goes to standard output: OK, or ERROR <number>: <text>. The value the
 'workbook holds when the run ends goes to the summary file, and R reads it
 'there.
+'
+'A failure to open the workbook is printed on its own, because a wrong
+'password is what Excel says there and nothing after it can run.
 '
 'The script decides nothing. R builds every value and passes it in.
 
@@ -32,22 +38,24 @@ Const OUTCOME_LINE = "outcome=OK"
 Const VALUE_KEY = "silent"
 
 Dim args
-Dim workbookPath, switchName, actionName, switchValue, summaryPath
+Dim workbookPath, openPassword, switchName, actionName, switchValue, summaryPath
 Dim excel, book, stored
+Dim openedNumber, openedText
 Dim failedNumber, failedText
 
 Set args = WScript.Arguments
 
-If args.Count < 5 Then
-  WScript.Echo "ERROR 1: quiet.vbs takes 5 arguments."
+If args.Count < 6 Then
+  WScript.Echo "ERROR 1: quiet.vbs takes 6 arguments."
   WScript.Quit 1
 End If
 
 workbookPath = args(0)
-switchName = args(1)
-actionName = args(2)
-switchValue = args(3)
-summaryPath = args(4)
+openPassword = args(1)
+switchName = args(2)
+actionName = args(3)
+switchValue = args(4)
+summaryPath = args(5)
 
 stored = ""
 
@@ -59,7 +67,17 @@ excel.DisplayAlerts = False
 excel.ScreenUpdating = False
 excel.EnableEvents = False
 
-Set book = excel.Workbooks.Open(workbookPath)
+Set book = OpenWorkbook(excel, workbookPath, openPassword)
+openedNumber = Err.Number
+openedText = Err.Description
+Err.Clear
+
+If openedNumber <> 0 Then
+  excel.Quit
+  Err.Clear
+  WScript.Echo "ERROR " & openedNumber & ": " & openedText
+  WScript.Quit 1
+End If
 
 If actionName = ACTION_WRITE Then
   WriteSwitch book, switchName, switchValue
@@ -105,6 +123,15 @@ If Err.Number <> 0 Then
 End If
 
 WScript.Echo "OK"
+
+'Open the workbook with the password it was handed, an empty one included. A
+'workbook that opens with none takes the empty password as no password. An
+'open with no password at all puts up the password prompt on a protected
+'workbook, and the prompt waits for a person. The empty password is handed
+'over so that workbook answers error 1004 straight away.
+Function OpenWorkbook(app, path, password)
+  Set OpenWorkbook = app.Workbooks.Open(path, , , , password)
+End Function
 
 'Write the switch, on the name the workbook already carries or on one this
 'run adds. A workbook built before the switch existed holds no such name.

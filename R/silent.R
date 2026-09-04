@@ -46,6 +46,9 @@ QUIET_ANSWER_LEAD <- "obt-quiet-"
 #'
 #' @param path The workbook to read. A setup, a designer, or a generated
 #'   linelist.
+#' @param password The password the workbook opens with. A linelist built
+#'   with one takes it here. Left out, the default, the workbook is opened
+#'   with none.
 #'
 #' @return `"Yes"` or `"No"`.
 #'
@@ -56,11 +59,13 @@ QUIET_ANSWER_LEAD <- "obt-quiet-"
 #' @examples
 #' \dontrun{
 #' obt_silent_get("~/measles/linelist/measles-2026.xlsb")
+#' obt_silent_get("~/measles/linelist/measles-2026.xlsb", password = "pw")
 #' }
-obt_silent_get <- function(path) {
+obt_silent_get <- function(path, password = NULL) {
   path <- check_workbook_path(path)
+  password <- check_password(password)
 
-  silent_answer(run_quiet(path, action = QUIET_READ))
+  silent_answer(run_quiet(path, action = QUIET_READ, password = password))
 }
 
 #' Write the open-time switch of a workbook
@@ -84,6 +89,9 @@ obt_silent_get <- function(path) {
 #' @param path The workbook to write. A setup, a designer, or a generated
 #'   linelist.
 #' @param value `"Yes"` or `"No"`.
+#' @param password The password the workbook opens with. A linelist built
+#'   with one takes it here. Left out, the default, the workbook is opened
+#'   with none.
 #'
 #' @return The value the workbook holds once the run is over, invisibly.
 #'
@@ -94,12 +102,19 @@ obt_silent_get <- function(path) {
 #' @examples
 #' \dontrun{
 #' obt_silent_set("~/measles/linelist/measles-2026.xlsb", "Yes")
+#' obt_silent_set("~/measles/linelist/measles-2026.xlsb", "Yes", password = "pw")
 #' }
-obt_silent_set <- function(path, value = SILENT_ON) {
+obt_silent_set <- function(path, value = SILENT_ON, password = NULL) {
   path <- check_workbook_path(path)
   value <- check_silent_value(value)
+  password <- check_password(password)
 
-  ran <- run_quiet(path, action = QUIET_WRITE, value = value)
+  ran <- run_quiet(
+    path,
+    action = QUIET_WRITE,
+    value = value,
+    password = password
+  )
 
   invisible(silent_answer(ran))
 }
@@ -113,6 +128,7 @@ obt_silent_set <- function(path, value = SILENT_ON) {
 #' @param path The workbook, already checked.
 #' @param action `"read"` or `"write"`.
 #' @param value The value a write stores.
+#' @param password The password the workbook opens with, or `NULL`.
 #' @param call The environment to blame in the error.
 #'
 #' @return The run record, as `run_driver()` answers it.
@@ -121,6 +137,7 @@ run_quiet <- function(
   path,
   action,
   value = NA_character_,
+  password = NULL,
   call = rlang::caller_env()
 ) {
   folder <- tempfile(QUIET_ANSWER_LEAD)
@@ -132,6 +149,7 @@ run_quiet <- function(
     workbook = path,
     action = action,
     value = value,
+    password = optional_text(password),
     summary = summary_path(folder, tools::file_path_sans_ext(basename(path))),
     call = call
   )

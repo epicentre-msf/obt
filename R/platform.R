@@ -818,6 +818,50 @@ stage_out <- function(
   target
 }
 
+#' Copy a file the run wrote back to the working folder, and leave the stage
+#' as it is
+#'
+#' A run that stops leaves the file that says why inside the stage, and the
+#' stage goes when the run closes. This copies such a file out first, and the
+#' staged copy stays for the close to sweep. It is called on the way out of a
+#' failed run, so a copy that cannot be made answers `NA` and says nothing:
+#' the failure of the run itself is the one worth reporting.
+#'
+#' @param stage The staging record.
+#' @param path Where the file belongs in the working folder.
+#'
+#' @return The path in the working folder, or `NA` when there is nothing to
+#'   copy or the copy could not be made.
+#' @noRd
+stage_keep <- function(stage, path) {
+  target <- absolute_path(path)
+  source <- stage_path(stage, target)
+
+  if (!file.exists(source)) {
+    return(NA_character_)
+  }
+
+  if (identical(source, target)) {
+    return(target)
+  }
+
+  kept <- tryCatch(
+    {
+      ensure_folder(dirname(target))
+      isTRUE(suppressWarnings(
+        file.copy(source, target, overwrite = TRUE, copy.date = TRUE)
+      ))
+    },
+    error = function(cnd) FALSE
+  )
+
+  if (!kept) {
+    return(NA_character_)
+  }
+
+  target
+}
+
 #' Close the staging area of one run
 #'
 #' Everything the run left inside is moved back to the working folder first,

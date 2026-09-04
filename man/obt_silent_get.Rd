@@ -4,11 +4,15 @@
 \alias{obt_silent_get}
 \title{Read the open-time switch of a workbook}
 \usage{
-obt_silent_get(path)
+obt_silent_get(path, password = NULL)
 }
 \arguments{
 \item{path}{The workbook to read. A setup, a designer, or a generated
 linelist.}
+
+\item{password}{The password the workbook opens with. A linelist built
+with one takes it here. Left out, the default, the workbook is opened
+with none.}
 }
 \value{
 \code{"Yes"} or \code{"No"}.
@@ -26,6 +30,7 @@ This opens Excel, so it takes macOS or Windows.
 \examples{
 \dontrun{
 obt_silent_get("~/measles/linelist/measles-2026.xlsb")
+obt_silent_get("~/measles/linelist/measles-2026.xlsb", password = "pw")
 }
 }
 \seealso{

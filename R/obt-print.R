@@ -42,10 +42,11 @@ LINELIST_HIGHLIGHTS <- list(
   list(label = "Export", type = "linelist-export", arg = "type")
 )
 
-# Arguments whose value is hidden wherever a recipe is printed. An export
-# carries the other linelist's password, and a description a user reads on a
-# shared screen has to keep it.
-SECRET_ARGS <- c("password")
+# Arguments whose value is hidden wherever a recipe is printed. A generation
+# carries the two passwords of the linelist it builds, a linelist recipe the
+# one its file opens with, and an export the other linelist's. A description
+# a user reads on a shared screen has to keep every one of them.
+SECRET_ARGS <- c("password", "debug_password")
 
 # What a hidden value shows as.
 SECRET_MASK <- "<hidden>"
@@ -411,12 +412,12 @@ format_args <- function(args) {
 #' @return A single string.
 #' @noRd
 format_value <- function(value, name = "") {
-  if (name %in% SECRET_ARGS) {
-    return(SECRET_MASK)
-  }
-
   if (is.null(value) || length(value) == 0) {
     return(UNSET_MARK)
+  }
+
+  if (name %in% SECRET_ARGS) {
+    return(SECRET_MASK)
   }
 
   if (is.character(value)) {

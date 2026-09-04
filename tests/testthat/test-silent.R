@@ -36,11 +36,12 @@ test_that("both halves of the quiet pair turn the workbook events off", {
   expect_true(any(grepl("set enable events to false", macos, fixed = TRUE)))
 })
 
-test_that("the quiet pair takes its five values in its own order", {
+test_that("the quiet pair takes its six values in its own order", {
   args <- driver_args(
     "quiet",
     list(
       workbook = "/work/linelist/measles-2026.xlsb",
+      password = NA_character_,
       switch_name = SILENT_SWITCH_NAME,
       action = QUIET_READ,
       value = NA_character_,
@@ -52,6 +53,7 @@ test_that("the quiet pair takes its five values in its own order", {
     args,
     c(
       "/work/linelist/measles-2026.xlsb",
+      "",
       SILENT_SWITCH_NAME,
       "read",
       "",
@@ -81,9 +83,10 @@ test_that("a read builds the command line the script is called with", {
   expect_identical(runs$seen$command, "osascript")
   expect_match(runs$seen$args[[1]], "quiet\\.applescript$")
   expect_identical(runs$seen$args[[2]], "/work/measles-2026.xlsb")
-  expect_identical(runs$seen$args[[3]], SILENT_SWITCH_NAME)
-  expect_identical(runs$seen$args[[4]], "read")
-  expect_identical(runs$seen$args[[5]], "")
+  expect_identical(runs$seen$args[[3]], "")
+  expect_identical(runs$seen$args[[4]], SILENT_SWITCH_NAME)
+  expect_identical(runs$seen$args[[5]], "read")
+  expect_identical(runs$seen$args[[6]], "")
   expect_identical(ran$pair, "quiet")
   expect_identical(ran$summary[["silent"]], SILENT_ON)
 })
@@ -109,8 +112,9 @@ test_that("a write carries the value across to the script", {
   expect_identical(runs$seen$args[[1]], "//nologo")
   expect_match(runs$seen$args[[2]], "quiet\\.vbs$")
   expect_identical(runs$seen$args[[3]], "C:\\work\\measles-2026.xlsb")
-  expect_identical(runs$seen$args[[5]], "write")
-  expect_identical(runs$seen$args[[6]], SILENT_ON)
+  expect_identical(runs$seen$args[[4]], "")
+  expect_identical(runs$seen$args[[6]], "write")
+  expect_identical(runs$seen$args[[7]], SILENT_ON)
 })
 
 test_that("a quiet run whose answer is lost is read off the summary", {
@@ -367,4 +371,67 @@ test_that("a system that cannot open Excel is refused before anything runs", {
     ),
     "macOS|Windows"
   )
+})
+
+test_that("a password crosses to the script beside the workbook it opens", {
+  folder <- withr::local_tempdir()
+  runs <- test_quiet_call(stored = SILENT_ON)
+
+  local_mocked_bindings(driver_call = runs$call)
+
+  driver_quiet(
+    workbook = "/work/measles-2026.xlsb",
+    action = QUIET_READ,
+    password = "open-pw",
+    summary = summary_path(folder, "measles-2026"),
+    os = "macos"
+  )
+
+  expect_identical(runs$seen$args[[2]], "/work/measles-2026.xlsb")
+  expect_identical(runs$seen$args[[3]], "open-pw")
+  expect_identical(runs$seen$args[[4]], SILENT_SWITCH_NAME)
+})
+
+test_that("a protected workbook is opened with the password it was given", {
+  folder <- withr::local_tempdir()
+  path <- test_workbook(folder)
+  runs <- test_quiet_run(stored = SILENT_ON)
+
+  local_mocked_bindings(driver_quiet = runs$quiet)
+
+  obt_silent_get(path, password = "open-pw")
+  expect_identical(runs$seen$password, "open-pw")
+
+  obt_silent_set(path, SILENT_ON, password = " two words ")
+  expect_identical(runs$seen$password, " two words ")
+})
+
+test_that("a workbook with no password hands the script none", {
+  folder <- withr::local_tempdir()
+  path <- test_workbook(folder)
+  runs <- test_quiet_run(stored = SILENT_ON)
+
+  local_mocked_bindings(driver_quiet = runs$quiet)
+
+  obt_silent_get(path)
+  expect_true(is.na(runs$seen$password))
+
+  obt_silent_set(path)
+  expect_true(is.na(runs$seen$password))
+})
+
+test_that("a password that is not one string is refused at the verb", {
+  folder <- withr::local_tempdir()
+  path <- test_workbook(folder)
+  runs <- test_quiet_run()
+
+  local_mocked_bindings(driver_quiet = runs$quiet)
+
+  expect_error(obt_silent_get(path, password = ""), "must carry a value")
+  expect_error(obt_silent_get(path, password = 1), "must be a single string")
+  expect_error(
+    obt_silent_set(path, SILENT_ON, password = NA_character_),
+    "must be a single string"
+  )
+  expect_identical(runs$calls, 0L)
 })

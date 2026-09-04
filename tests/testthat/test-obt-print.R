@@ -146,3 +146,26 @@ test_that("a printer given something that is not a recipe says so", {
   expect_error(obt_describe("/tmp/measles"), "must be an")
   expect_error(obt_operations("/tmp/measles"), "must be an")
 })
+
+test_that("the debugging password is never printed", {
+  recipe <- obt(folder = "/tmp/measles") |>
+    add_operation(
+      "designer-generate",
+      list(name = "measles-2026", debug_password = "open-sesame")
+    )
+
+  out <- printed(obt_describe(recipe))
+
+  expect_false(grepl("open-sesame", out, fixed = TRUE))
+  expect_match(out, "<hidden>", fixed = TRUE)
+})
+
+test_that("a password that was never set prints as unset", {
+  recipe <- obt(folder = "/tmp/measles") |>
+    add_operation("linelist-export", list(type = "migration", password = NULL))
+
+  out <- printed(obt_describe(recipe))
+
+  expect_false(grepl("<hidden>", out, fixed = TRUE))
+  expect_match(out, "password", fixed = TRUE)
+})

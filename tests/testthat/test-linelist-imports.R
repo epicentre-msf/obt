@@ -560,7 +560,12 @@ test_that("both imports build the command line the script is called with", {
   expect_identical(
     runs$args,
     shQuote(
-      c(driver_script("linelist-geobase"), "/work/ll.xlsb", "/work/geo.xlsx"),
+      c(
+        driver_script("linelist-geobase"),
+        "/work/ll.xlsb",
+        "",
+        "/work/geo.xlsx"
+      ),
       type = "sh"
     )
   )
@@ -578,6 +583,7 @@ test_that("both imports build the command line the script is called with", {
       c(
         driver_script("linelist-import"),
         "/work/ll.xlsb",
+        "",
         "/work/in.xlsx",
         "replace",
         "Yes"
@@ -596,8 +602,9 @@ test_that("the export builds the command line the script is called with", {
     linelist = "/work/ll.xlsb",
     name = "",
     to = "/work/export",
-    password = "pw",
-    other = "/work/old.xlsb"
+    password = "own-pw",
+    other = "/work/old.xlsb",
+    other_password = "pw"
   )
 
   expect_identical(
@@ -606,10 +613,139 @@ test_that("the export builds the command line the script is called with", {
       c(
         driver_script("linelist-export"),
         "/work/ll.xlsb",
+        "own-pw",
         "",
         "/work/export",
         "pw",
         "/work/old.xlsb"
+      ),
+      type = "sh"
+    )
+  )
+})
+
+test_that("the geobase run opens a protected linelist with its password", {
+  folder <- withr::local_tempdir()
+  geo <- geobase_file(folder)
+  recipe <- linelist_recipe(folder)
+  driver <- test_linelist_driver(linelist_answer("geobase", geo))
+  stage <- test_stage(folder, folder, staged = FALSE)
+
+  local_mocked_bindings(driver_linelist_geobase = driver$call)
+
+  run_linelist_geobase(
+    recipe,
+    new_operation("linelist-geobase", list(path = "geobase.xlsx")),
+    stage = stage,
+    state = list(
+      linelist = built_linelist(folder),
+      linelist_password = "open-pw"
+    )
+  )
+
+  expect_identical(driver$seen$password, "open-pw")
+})
+
+test_that("the import opens a protected linelist with its password", {
+  folder <- withr::local_tempdir()
+  from <- migration_file(folder)
+  recipe <- linelist_recipe(folder)
+  driver <- test_linelist_driver(linelist_answer("import", from))
+  stage <- test_stage(folder, folder, staged = FALSE)
+
+  local_mocked_bindings(driver_linelist_import = driver$call)
+
+  run_linelist_import(
+    recipe,
+    new_operation(
+      "linelist-import",
+      list(from = from, rule = "append", force = FALSE)
+    ),
+    stage = stage,
+    state = list(
+      linelist = built_linelist(folder),
+      linelist_password = "open-pw"
+    )
+  )
+
+  expect_identical(driver$seen$password, "open-pw")
+})
+
+test_that("a linelist with no password is opened with none", {
+  folder <- withr::local_tempdir()
+  geo <- geobase_file(folder)
+  from <- migration_file(folder)
+  recipe <- linelist_recipe(folder)
+  linelist <- built_linelist(folder)
+  geobase <- test_linelist_driver(linelist_answer("geobase", geo))
+  import <- test_linelist_driver(linelist_answer("import", from))
+  stage <- test_stage(folder, folder, staged = FALSE)
+
+  local_mocked_bindings(
+    driver_linelist_geobase = geobase$call,
+    driver_linelist_import = import$call
+  )
+
+  run_linelist_geobase(
+    recipe,
+    new_operation("linelist-geobase", list(path = "geobase.xlsx")),
+    stage = stage,
+    state = list(linelist = linelist)
+  )
+  run_linelist_import(
+    recipe,
+    new_operation(
+      "linelist-import",
+      list(from = from, rule = "append", force = FALSE)
+    ),
+    stage = stage,
+    state = list(linelist = linelist)
+  )
+
+  expect_true(is.na(geobase$seen$password))
+  expect_true(is.na(import$seen$password))
+})
+
+test_that("the password crosses to the script beside the linelist it opens", {
+  runs <- test_recording_call()
+
+  local_mocked_bindings(driver_call = runs$call, os_name = function() "macos")
+
+  driver_linelist_geobase(
+    linelist = "/work/ll.xlsb",
+    geo = "/work/geo.xlsx",
+    password = "open-pw"
+  )
+
+  expect_identical(
+    runs$args,
+    shQuote(
+      c(
+        driver_script("linelist-geobase"),
+        "/work/ll.xlsb",
+        "open-pw",
+        "/work/geo.xlsx"
+      ),
+      type = "sh"
+    )
+  )
+
+  driver_linelist_import(
+    linelist = "/work/ll.xlsb",
+    from = "/work/in.xlsx",
+    password = "open-pw"
+  )
+
+  expect_identical(
+    runs$args,
+    shQuote(
+      c(
+        driver_script("linelist-import"),
+        "/work/ll.xlsb",
+        "open-pw",
+        "/work/in.xlsx",
+        "append",
+        "No"
       ),
       type = "sh"
     )

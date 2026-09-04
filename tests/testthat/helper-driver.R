@@ -26,6 +26,31 @@ test_driver_call <- function(output = "OK", status = 0L) {
   }
 }
 
+# The same, writing the summary a workbook writes while the run goes.
+#
+# The seam clears a summary an earlier run left before the script starts, so
+# a test that wants one there has the mock write it, the way Excel does.
+test_writing_call <- function(
+  path,
+  values = c(linelist = "measles-2026.xlsb", sheets = "12"),
+  report = c("The build finished.", "Nothing was skipped."),
+  output = DRIVER_OK,
+  status = 0L
+) {
+  function(command, args) {
+    ensure_folder(dirname(path))
+    lines <- paste0(names(values), "=", values)
+
+    if (length(report) > 0) {
+      lines <- c(lines, SUMMARY_MARKER, report)
+    }
+
+    writeLines(lines, path)
+
+    list(output = as.character(output), status = as.integer(status))
+  }
+}
+
 # The same, recording what it was called with.
 #
 # `state$call` stands where `driver_call()` stands, `state$command` and
@@ -56,6 +81,8 @@ test_generate_values <- function() {
     name = "measles-2026",
     setup_language = "English",
     form_language = "ENG",
-    ribbon = "/work/obt/main/ribbon.xlsm"
+    ribbon = "/work/obt/main/ribbon.xlsm",
+    password = "open-pw",
+    debug_password = "debug-pw"
   )
 }

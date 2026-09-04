@@ -177,9 +177,10 @@ test_that("an argument that is left out or unknown is refused", {
 
 test_that("a run that answers OK is read from the answer", {
   folder <- withr::local_tempdir()
-  test_summary_file(folder)
 
-  local_mocked_bindings(driver_call = test_driver_call("OK"))
+  local_mocked_bindings(
+    driver_call = test_writing_call(summary_path(folder, "measles-2026"))
+  )
 
   result <- driver_generate(
     designer = "designer.xlsb",
@@ -204,11 +205,11 @@ test_that("a run that answers OK is read from the answer", {
 
 test_that("a lost answer is read off the summary file", {
   folder <- withr::local_tempdir()
-  test_summary_file(folder)
 
   local_mocked_bindings(
-    driver_call = test_driver_call(
-      c("Microsoft Excel got an error: AppleEvent timed out.", ""),
+    driver_call = test_writing_call(
+      summary_path(folder, "measles-2026"),
+      output = c("Microsoft Excel got an error: AppleEvent timed out.", ""),
       status = 1L
     )
   )
@@ -230,14 +231,15 @@ test_that("a lost answer is read off the summary file", {
 
 test_that("a lost answer on a run the summary calls refused is a failure", {
   folder <- withr::local_tempdir()
-  test_summary_file(
-    folder,
-    values = c(outcome = "refused", imported = "no"),
-    report = c("The file records no language.", "Nothing was imported.")
-  )
 
   local_mocked_bindings(
-    driver_call = test_driver_call("execution error: -609", status = 1L)
+    driver_call = test_writing_call(
+      summary_path(folder, "measles-2026"),
+      values = c(outcome = "refused", imported = "no"),
+      report = c("The file records no language.", "Nothing was imported."),
+      output = "execution error: -609",
+      status = 1L
+    )
   )
 
   expect_error(
@@ -256,13 +258,14 @@ test_that("a lost answer on a run the summary calls refused is a failure", {
 
 test_that("a lost answer on a run the summary calls OK is a finished run", {
   folder <- withr::local_tempdir()
-  test_summary_file(
-    folder,
-    values = c(outcome = "OK", export = "setup.xlsx")
-  )
 
   local_mocked_bindings(
-    driver_call = test_driver_call("execution error: -1712", status = 1L)
+    driver_call = test_writing_call(
+      summary_path(folder, "measles-2026"),
+      values = c(outcome = "OK", export = "setup.xlsx"),
+      output = "execution error: -1712",
+      status = 1L
+    )
   )
 
   result <- driver_generate(
@@ -314,6 +317,55 @@ test_that("the outcome key is read whatever case it was written in", {
   )
 
   expect_true(summary_finished(lower))
+})
+
+test_that("a summary left by an earlier run is cleared before the script runs", {
+  folder <- withr::local_tempdir()
+  stale <- test_summary_file(
+    folder,
+    values = c(outcome = "OK", linelist = "measles-2026.xlsb")
+  )
+  seen <- new.env(parent = emptyenv())
+
+  local_mocked_bindings(
+    driver_call = function(command, args) {
+      seen$stale_there <- file.exists(stale)
+      list(output = "execution error: -1712", status = 1L)
+    }
+  )
+
+  expect_error(
+    driver_generate(
+      designer = "designer.xlsb",
+      setup = "setup.xlsb",
+      folder = folder,
+      name = "measles-2026",
+      setup_language = "English",
+      form_language = "ENG",
+      os = "macos"
+    ),
+    "gave no answer"
+  )
+  expect_false(seen$stale_there)
+})
+
+test_that("a run that writes no summary has nothing to clear", {
+  local_mocked_bindings(driver_call = test_driver_call("OK"))
+
+  result <- driver_generate(
+    designer = "designer.xlsb",
+    setup = "setup.xlsb",
+    folder = withr::local_tempdir(),
+    name = "measles-2026",
+    setup_language = "English",
+    form_language = "ENG",
+    summary = NA_character_,
+    os = "macos"
+  )
+
+  expect_identical(result$answer, "OK")
+  expect_identical(forget_summary(NA_character_), NULL)
+  expect_identical(forget_summary(character()), NULL)
 })
 
 test_that("a lost answer with no summary file is a failed run", {
@@ -579,4 +631,70 @@ test_that("every entry point a recipe names is called by a shipped half", {
   for (entry in entries) {
     expect_true(any(grepl(entry, shipped, fixed = TRUE)), info = entry)
   }
+})
+
+test_that("every pair that opens a workbook takes its password beside it", {
+  opening <- c(
+    "quiet",
+    "linelist-geobase",
+    "linelist-import",
+    "linelist-export"
+  )
+
+  for (pair in opening) {
+    arguments <- DRIVER_PAIRS[[pair]]$arguments
+    expect_identical(arguments[[2]], "password", info = pair)
+  }
+
+  expect_identical(
+    DRIVER_PAIRS[["linelist-export"]]$arguments,
+    c("linelist", "password", "name", "folder", "other_password", "other")
+  )
+})
+
+test_that("the generate pair takes the two passwords of the linelist last", {
+  arguments <- DRIVER_PAIRS[["designer-generate"]]$arguments
+
+  expect_identical(
+    utils::tail(arguments, 2),
+    c("password", "debug_password")
+  )
+})
+
+test_that("both halves of a workbook pair open the file with its password", {
+  opening <- c(
+    "quiet",
+    "linelist-geobase",
+    "linelist-import",
+    "linelist-export"
+  )
+
+  for (pair in opening) {
+    windows <- readLines(driver_script(pair, os = "windows"), warn = FALSE)
+    macos <- readLines(driver_script(pair, os = "macos"), warn = FALSE)
+
+    expect_true(
+      any(grepl("Workbooks\\.Open\\(.*[Pp]assword", windows)),
+      info = pair
+    )
+    expect_true(any(grepl("open workbook .*password", macos)), info = pair)
+  }
+})
+
+test_that("both halves of the generate pair write the two password ranges", {
+  for (os in names(DRIVER_RUNNERS)) {
+    lines <- readLines(
+      driver_script("designer-generate", os = os),
+      warn = FALSE
+    )
+
+    expect_true(any(grepl("RNG_LLPwdOpen", lines, fixed = TRUE)), info = os)
+    expect_true(any(grepl("RNG_LLPassword", lines, fixed = TRUE)), info = os)
+  }
+})
+
+test_that("an optional value crosses as NA when the recipe recorded none", {
+  expect_true(is.na(optional_text(NULL)))
+  expect_identical(optional_text("pw"), "pw")
+  expect_identical(optional_text(" two words "), " two words ")
 })

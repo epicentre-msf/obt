@@ -7,7 +7,7 @@
 
 #' Generate a linelist
 #'
-#' Writes the seven entries the designer's `Main` sheet reads, then runs the
+#' Writes the nine entries the designer's `Main` sheet reads, then runs the
 #' generation callback. The designer writes the linelist under `folder`, as
 #' `<name>.xlsb`, and its summary beside it.
 #'
@@ -21,6 +21,11 @@
 #'   built in.
 #' @param geo The geobase file. `NA` builds the linelist with no geobase.
 #' @param ribbon The ribbon template. `NA` builds the buttons with no ribbon.
+#' @param password The password the linelist opens with. `NA` builds a
+#'   linelist that opens with none.
+#' @param debug_password The password the sheets and the structure of the
+#'   linelist are protected with. `NA` hands the designer an empty entry, and
+#'   the designer protects with that.
 #' @param summary The file the designer writes its summary to.
 #' @param os The operating system to build the call for.
 #' @param call The environment to blame in the error.
@@ -36,6 +41,8 @@ driver_generate <- function(
   form_language,
   geo = NA_character_,
   ribbon = NA_character_,
+  password = NA_character_,
+  debug_password = NA_character_,
   summary = summary_path(folder, name),
   os = os_name(),
   call = rlang::caller_env()
@@ -52,7 +59,9 @@ driver_generate <- function(
         name = name,
         setup_language = setup_language,
         form_language = form_language,
-        ribbon = ribbon
+        ribbon = ribbon,
+        password = password,
+        debug_password = debug_password
       ),
       call = call
     ),

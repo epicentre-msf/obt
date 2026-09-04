@@ -21,6 +21,7 @@ test_that("the recipe records the linelist it was given", {
   expect_identical(operation$type, "linelist-add")
   expect_identical(operation$args$from, "linelist/measles-2026.xlsb")
   expect_false(operation$args$overwrite)
+  expect_null(operation$args$password)
   expect_false(operation$waiting)
 })
 
@@ -341,4 +342,98 @@ test_that("a narrowed recipe names no linelist of its own", {
 
   expect_match(said, "Linelist")
   expect_match(said, UNSET_MARK, fixed = TRUE)
+})
+
+# The password a linelist opens with ---------------------------------------
+
+test_that("the password the linelist opens with is recorded with it", {
+  folder <- withr::local_tempdir()
+  linelist <- built_linelist(folder)
+
+  recipe <- obt_linelist(from = linelist, folder = folder, password = " pw ")
+
+  expect_identical(recipe$operations[[1]]$args$password, " pw ")
+})
+
+test_that("a linelist takes no password unless one is named", {
+  folder <- withr::local_tempdir()
+  linelist <- built_linelist(folder)
+
+  recipe <- obt_linelist(from = linelist, folder = folder)
+  args <- recipe$operations[[1]]$args
+
+  expect_true("password" %in% names(args))
+  expect_null(args$password)
+})
+
+test_that("a password that is not one string is refused at the verb", {
+  folder <- withr::local_tempdir()
+  linelist <- built_linelist(folder)
+
+  expect_error(
+    obt_linelist(from = linelist, folder = folder, password = ""),
+    "must carry a value"
+  )
+  expect_error(
+    obt_linelist(from = linelist, folder = folder, password = 1),
+    "must be a single string"
+  )
+})
+
+test_that("the password is hidden wherever a linelist recipe is printed", {
+  folder <- withr::local_tempdir()
+  linelist <- built_linelist(folder)
+
+  said <- printed(
+    obt_linelist(from = linelist, folder = folder, password = "open-sesame") |>
+      obt_describe()
+  )
+
+  expect_false(grepl("open-sesame", said, fixed = TRUE))
+  expect_match(said, "<hidden>", fixed = TRUE)
+})
+
+test_that("a narrowing takes no password", {
+  recipe <- obt(folder = "/tmp/measles")
+
+  expect_error(obt_linelist(recipe, password = "pw"), "on its own")
+})
+
+test_that("the run hands the password on with the linelist", {
+  folder <- withr::local_tempdir()
+  elsewhere <- withr::local_tempdir()
+  from <- empty_file(elsewhere, "measles-2026.xlsb")
+
+  recipe <- obt_linelist(from = from, folder = folder, password = "open-pw")
+  answer <- run_linelist_add(
+    recipe,
+    recipe$operations[[1]],
+    stage = NULL,
+    state = list()
+  )
+
+  expect_identical(answer$state$linelist_password, "open-pw")
+})
+
+test_that("a linelist added with no password hands none on", {
+  folder <- withr::local_tempdir()
+  elsewhere <- withr::local_tempdir()
+  from <- empty_file(elsewhere, "measles-2026.xlsb")
+
+  recipe <- obt_linelist(from = from, folder = folder)
+  answer <- run_linelist_add(
+    recipe,
+    recipe$operations[[1]],
+    stage = NULL,
+    state = list()
+  )
+
+  expect_true(is.na(answer$state$linelist_password))
+})
+
+test_that("the password a run opens the linelist with comes from the state", {
+  expect_identical(linelist_password(list(linelist_password = "pw")), "pw")
+  expect_true(is.na(linelist_password(list())))
+  expect_true(is.na(linelist_password(list(linelist_password = ""))))
+  expect_true(is.na(linelist_password(list(linelist_password = NULL))))
 })

@@ -3,10 +3,16 @@
 '
 '  cscript //nologo designer-generate.vbs <designer> <geo> <setup> <folder> <name>
 '                                <setup-language> <form-language> <ribbon>
+'                                <password> <debug-password>
 '
-'The eight arguments are the same, in the same order, as
-'designer-generate.applescript. Every path is absolute. A geobase or a ribbon the run
-'does not use arrives as an empty string.
+'The ten arguments are the same, in the same order, as
+'designer-generate.applescript. Every path is absolute. A geobase or a ribbon
+'the run does not use arrives as an empty string, and so does a password the
+'linelist is built without.
+'
+'<password> is what the linelist opens with once it is saved. <debug-password>
+'is what its sheets and its structure are protected with. The designer reads
+'both off its Main sheet, and the run writes them there with the rest.
 '
 'One line goes to standard output: OK, or ERROR <number>: <text>.
 '
@@ -16,14 +22,14 @@ Option Explicit
 
 Dim args
 Dim designerPath, geoPath, setupPath, folderPath, linelistName
-Dim setupLanguage, formLanguage, ribbonPath
+Dim setupLanguage, formLanguage, ribbonPath, openPassword, debugPassword
 Dim excel, book, sheet
 Dim failedNumber, failedText
 
 Set args = WScript.Arguments
 
-If args.Count < 8 Then
-  WScript.Echo "ERROR 1: designer-generate.vbs takes 8 arguments."
+If args.Count < 10 Then
+  WScript.Echo "ERROR 1: designer-generate.vbs takes 10 arguments."
   WScript.Quit 1
 End If
 
@@ -35,6 +41,8 @@ linelistName = args(4)
 setupLanguage = args(5)
 formLanguage = args(6)
 ribbonPath = args(7)
+openPassword = args(8)
+debugPassword = args(9)
 
 On Error Resume Next
 
@@ -53,6 +61,8 @@ sheet.Range("RNG_LLName").Value = linelistName
 sheet.Range("RNG_LangSetup").Value = setupLanguage
 sheet.Range("RNG_LLForm").Value = formLanguage
 sheet.Range("RNG_LLTemp").Value = ribbonPath
+sheet.Range("RNG_LLPwdOpen").Value = openPassword
+sheet.Range("RNG_LLPassword").Value = debugPassword
 
 excel.Run "'" & book.Name & "'!clickGenerate"
 

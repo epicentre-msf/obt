@@ -4,7 +4,13 @@
 \alias{obt_designer_generate}
 \title{Generate the linelist}
 \usage{
-obt_designer_generate(obtops, name, overwrite = FALSE)
+obt_designer_generate(
+  obtops,
+  name,
+  overwrite = FALSE,
+  password = NULL,
+  debug_password = NULL
+)
 }
 \arguments{
 \item{obtops}{An \code{obt} recipe.}
@@ -13,6 +19,13 @@ obt_designer_generate(obtops, name, overwrite = FALSE)
 
 \item{overwrite}{Whether a linelist of that name may be replaced. With
 \code{FALSE}, the default, the run stops when the file is already there.}
+
+\item{password}{The password the linelist opens with. Left out, the
+default, the linelist opens with none.}
+
+\item{debug_password}{The password the sheets and the structure of the
+linelist are protected with, which the designer calls the debugging
+password. Left out, the default, the designer protects with an empty one.}
 }
 \value{
 The recipe, with the generation operation added.
@@ -22,10 +35,21 @@ Records the generation run. At commit time the designer's \code{Main} sheet is
 filled from the recipe and the linelist is built under \verb{linelist/} in the
 working folder, as \verb{<name>.xlsb}.
 
+A linelist can be built with two passwords, and the designer takes both
+off its \code{Main} sheet. \code{password} is what the file opens with, and every
+verb that opens the linelist later takes it: \code{\link[=obt_linelist]{obt_linelist()}},
+\code{\link[=obt_silent_get]{obt_silent_get()}} and \code{\link[=obt_silent_set]{obt_silent_set()}}. \code{debug_password} is what the
+sheets and the structure of the linelist are protected with; the linelist
+keeps it and uses it on its own. Both are hidden wherever a recipe is
+printed, and the default is a linelist with no password.
+
 Like every verb this one records and answers the recipe. Nothing is written
 until \code{obt_commit()} runs.
 }
 \examples{
 obt(folder = file.path(tempdir(), "measles")) |>
   obt_designer_generate(name = "measles-2026")
+
+obt(folder = file.path(tempdir(), "measles")) |>
+  obt_designer_generate(name = "measles-2026", password = "open-sesame")
 }

@@ -49,6 +49,12 @@ LINELIST_OPERATION_TYPES <- c(
 #' by an earlier run is picked up. A folder holding more than one is refused,
 #' and naming the file with `from` is what settles it.
 #'
+#' A linelist built with a password opens with that password, and every verb
+#' of the recipe opens the file. Give the password with the workbook, and the
+#' run hands it to each of them. It is hidden wherever a recipe is printed. A
+#' narrowed recipe reads the file off the folder and takes no password, so a
+#' linelist that opens with one is named with `from`.
+#'
 #' Like every verb this one records and answers the recipe. Nothing is copied
 #' until [obt_commit()] runs.
 #'
@@ -59,6 +65,9 @@ LINELIST_OPERATION_TYPES <- c(
 #'   be replaced. With `FALSE`, the default, the run stops when one is there,
 #'   because that file carries whatever the linelist verbs have written into
 #'   it.
+#' @param password The password the linelist opens with. Give it with a
+#'   linelist workbook that was built with one. Left out, the default, the
+#'   linelist is opened with none.
 #'
 #' @return An object of class `obt_linelist`.
 #'
@@ -78,21 +87,33 @@ LINELIST_OPERATION_TYPES <- c(
 #' obt(folder = file.path(tempdir(), "measles")) |>
 #'   obt_designer_add(type = "dev") |>
 #'   obt_linelist()
-obt_linelist <- function(from, folder = NULL, overwrite = FALSE) {
+obt_linelist <- function(
+  from,
+  folder = NULL,
+  overwrite = FALSE,
+  password = NULL
+) {
   if (is_obt(from)) {
-    return(narrow_linelist(from, folder = folder, overwrite = overwrite))
+    return(narrow_linelist(
+      from,
+      folder = folder,
+      overwrite = overwrite,
+      password = password
+    ))
   }
 
   from <- check_linelist_file(from)
   folder <- check_linelist_folder(folder)
   check_flag(overwrite)
+  password <- check_password(password)
 
   add_operation(
     new_obt_linelist(folder = folder, operations = list()),
     type = "linelist-add",
     args = list(
       from = path_relative(from, folder = folder),
-      overwrite = overwrite
+      overwrite = overwrite,
+      password = password
     )
   )
 }
@@ -137,6 +158,7 @@ new_obt_linelist <- function(folder, operations) {
 #' @param obtops The recipe to narrow.
 #' @param folder What the caller passed as the folder.
 #' @param overwrite What the caller passed as the overwrite flag.
+#' @param password What the caller passed as the password.
 #' @param call The environment to blame in the error.
 #'
 #' @return An object of class `obt_linelist`.
@@ -145,6 +167,7 @@ narrow_linelist <- function(
   obtops,
   folder = NULL,
   overwrite = FALSE,
+  password = NULL,
   call = rlang::caller_env()
 ) {
   kept <- narrow_operations(
@@ -154,6 +177,7 @@ narrow_linelist <- function(
     folder = folder,
     overwrite = overwrite,
     what = "linelist",
+    password = password,
     call = call
   )
 
@@ -164,7 +188,8 @@ narrow_linelist <- function(
 #'
 #' The copy keeps the name the user knows the file by, and it is what every
 #' linelist verb works on, so the file the user handed over is never opened by
-#' a run.
+#' a run. The password the file opens with goes on with it, so every verb
+#' after this one opens the copy.
 #'
 #' @param obtops The recipe.
 #' @param operation The operation record.
@@ -187,7 +212,13 @@ run_linelist_add <- function(obtops, operation, stage, state) {
     copy_file(from, kept)
   }
 
-  list(produced = c(linelist = kept), state = list(linelist = kept))
+  list(
+    produced = c(linelist = kept),
+    state = list(
+      linelist = kept,
+      linelist_password = optional_text(operation$args$password)
+    )
+  )
 }
 
 #' Check the file a linelist recipe is built from

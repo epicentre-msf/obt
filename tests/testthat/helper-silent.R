@@ -61,6 +61,7 @@ test_quiet_run <- function(stored = SILENT_ON) {
     workbook,
     action,
     value = NA_character_,
+    password = NA_character_,
     switch_name = SILENT_SWITCH_NAME,
     summary,
     os = os_name(),
@@ -71,6 +72,7 @@ test_quiet_run <- function(stored = SILENT_ON) {
       workbook = workbook,
       action = action,
       value = value,
+      password = password,
       switch_name = switch_name,
       summary = summary
     )

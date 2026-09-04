@@ -482,3 +482,165 @@ test_that("the run sets the flag on the designer it staged", {
 
   expect_identical(seen$designer, driver$seen$designer)
 })
+
+test_that("the two passwords the recipe recorded cross to the designer", {
+  local_build_in_place_said()
+  folder <- withr::local_tempdir()
+  recipe <- generation_folder(folder)
+  driver <- test_generation()
+  local_mocked_bindings(driver_generate = driver$generate)
+
+  run_designer_generate(
+    recipe,
+    generation_operation(password = "open-pw", debug_password = "debug-pw"),
+    stage = test_stage(folder, folder, staged = FALSE),
+    state = generation_state()
+  )
+
+  expect_identical(driver$seen$password, "open-pw")
+  expect_identical(driver$seen$debug_password, "debug-pw")
+})
+
+test_that("a run with no password hands the designer neither", {
+  local_build_in_place_said()
+  folder <- withr::local_tempdir()
+  recipe <- generation_folder(folder)
+  driver <- test_generation()
+  local_mocked_bindings(driver_generate = driver$generate)
+
+  run_designer_generate(
+    recipe,
+    generation_operation(),
+    stage = test_stage(folder, folder, staged = FALSE),
+    state = generation_state()
+  )
+
+  expect_true(is.na(driver$seen$password))
+  expect_true(is.na(driver$seen$debug_password))
+})
+
+test_that("the password the linelist opens with is left for later steps", {
+  local_build_in_place_said()
+  folder <- withr::local_tempdir()
+  recipe <- generation_folder(folder)
+  driver <- test_generation()
+  local_mocked_bindings(driver_generate = driver$generate)
+
+  answer <- run_designer_generate(
+    recipe,
+    generation_operation(password = "open-pw"),
+    stage = test_stage(folder, folder, staged = FALSE),
+    state = generation_state()
+  )
+
+  expect_identical(answer$state$linelist_password, "open-pw")
+})
+
+test_that("a linelist built with no password leaves none for later steps", {
+  local_build_in_place_said()
+  folder <- withr::local_tempdir()
+  recipe <- generation_folder(folder)
+  driver <- test_generation()
+  local_mocked_bindings(driver_generate = driver$generate)
+
+  answer <- run_designer_generate(
+    recipe,
+    generation_operation(),
+    stage = test_stage(folder, folder, staged = FALSE),
+    state = generation_state()
+  )
+
+  expect_true(is.na(answer$state$linelist_password))
+})
+
+test_that("the summary of a refused staged run is copied back first", {
+  local_build_in_place_said()
+  folder <- withr::local_tempdir()
+  root <- file.path(withr::local_tempdir(), "run-1")
+  recipe <- generation_folder(folder)
+  stage <- test_stage(folder, root)
+  staged <- summary_path(file.path(stage$root, "linelist"), "measles-2026")
+
+  local_mocked_bindings(
+    driver_generate = function(
+      designer,
+      setup,
+      folder,
+      name,
+      ...,
+      summary = summary_path(folder, name),
+      os = os_name(),
+      call = rlang::caller_env()
+    ) {
+      ensure_folder(folder)
+      writeLines(
+        c("outcome=refused", SUMMARY_MARKER, "The build gave up."),
+        summary
+      )
+      cli::cli_abort("The {.val designer-generate} run was refused.")
+    }
+  )
+
+  expect_error(
+    run_designer_generate(
+      recipe,
+      generation_operation(),
+      stage = stage,
+      state = generation_state()
+    ),
+    "was refused"
+  )
+
+  kept <- summary_path(obt_paths(recipe)$linelist, "measles-2026")
+
+  expect_true(file.exists(kept))
+  expect_match(readLines(kept, warn = FALSE)[[1]], "refused")
+  expect_true(file.exists(staged))
+})
+
+test_that("a run that stopped after the designer answered keeps its summary", {
+  local_build_in_place_said()
+  folder <- withr::local_tempdir()
+  root <- file.path(withr::local_tempdir(), "run-1")
+  recipe <- generation_folder(folder)
+  driver <- test_generation(values = c(linelist = "something-else.xlsb"))
+  local_mocked_bindings(driver_generate = driver$generate)
+
+  expect_error(
+    run_designer_generate(
+      recipe,
+      generation_operation(),
+      stage = test_stage(folder, root),
+      state = generation_state()
+    ),
+    "another name"
+  )
+
+  expect_true(file.exists(
+    summary_path(obt_paths(recipe)$linelist, "measles-2026")
+  ))
+})
+
+test_that("a staged run that finished moves its summary out once", {
+  local_build_in_place_said()
+  folder <- withr::local_tempdir()
+  root <- file.path(withr::local_tempdir(), "run-1")
+  recipe <- generation_folder(folder)
+  driver <- test_generation()
+  local_mocked_bindings(driver_generate = driver$generate)
+
+  answer <- run_designer_generate(
+    recipe,
+    generation_operation(),
+    stage = test_stage(folder, root),
+    state = generation_state()
+  )
+
+  kept <- summary_path(obt_paths(recipe)$linelist, "measles-2026")
+
+  expect_identical(unname(answer$produced[["summary"]]), kept)
+  expect_true(file.exists(kept))
+  expect_false(file.exists(
+    summary_path(file.path(root, "linelist"), "measles-2026")
+  ))
+})

@@ -1,11 +1,12 @@
 'linelist-import.vbs
 'Read a file another linelist wrote for migration.
 '
-'  cscript //nologo linelist-import.vbs <linelist> <file> <rule> <force>
+'  cscript //nologo linelist-import.vbs <linelist> <password> <file> <rule> <force>
 '
-'The four arguments are the same, in the same order, as
-'linelist-import.applescript. Both paths are absolute. <rule> is append or
-'replace, and <force> is Yes or No.
+'The five arguments are the same, in the same order, as
+'linelist-import.applescript. Both paths are absolute. <password> is what the
+'linelist opens with, and arrives as an empty string for a linelist built
+'with none. <rule> is append or replace, and <force> is Yes or No.
 '
 'One line goes to standard output: OK, or ERROR <number>: <text>.
 '
@@ -20,29 +21,30 @@
 'about a file it cannot vouch for arrive that way.
 '
 'A failure to open the workbook is printed, because there is no summary file
-'to read after one.
+'to read after one. A wrong password is what Excel says there.
 '
 'The script decides nothing. R builds every value and passes it in.
 
 Option Explicit
 
 Dim args
-Dim linelistPath, sourcePath, pastingRule, forceWord
+Dim linelistPath, openPassword, sourcePath, pastingRule, forceWord
 Dim excel, book, bookName
 Dim answer
 Dim openedNumber, openedText
 
 Set args = WScript.Arguments
 
-If args.Count < 4 Then
-  WScript.Echo "ERROR 1: linelist-import.vbs takes 4 arguments."
+If args.Count < 5 Then
+  WScript.Echo "ERROR 1: linelist-import.vbs takes 5 arguments."
   WScript.Quit 1
 End If
 
 linelistPath = args(0)
-sourcePath = args(1)
-pastingRule = args(2)
-forceWord = args(3)
+openPassword = args(1)
+sourcePath = args(2)
+pastingRule = args(3)
+forceWord = args(4)
 
 On Error Resume Next
 
@@ -51,7 +53,7 @@ excel.Visible = True
 excel.DisplayAlerts = False
 excel.ScreenUpdating = False
 
-Set book = excel.Workbooks.Open(linelistPath)
+Set book = OpenWorkbook(excel, linelistPath, openPassword)
 openedNumber = Err.Number
 openedText = Err.Description
 Err.Clear
@@ -78,3 +80,12 @@ Set args = Nothing
 If Len(answer) > 0 Then
   WScript.Echo answer
 End If
+
+'Open the linelist with the password it was handed, an empty one included. A
+'linelist that opens with none takes the empty password as no password. An
+'open with no password at all puts up the password prompt on a protected
+'linelist, and the prompt waits for a person. The empty password is handed
+'over so that linelist answers error 1004 straight away.
+Function OpenWorkbook(app, path, password)
+  Set OpenWorkbook = app.Workbooks.Open(path, , , , password)
+End Function

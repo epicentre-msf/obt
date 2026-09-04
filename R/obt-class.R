@@ -156,6 +156,8 @@ check_obt_plain <- function(
 #' @param folder What the caller passed as the folder.
 #' @param overwrite What the caller passed as the overwrite flag.
 #' @param what The workbook the narrowed class works on, in one word.
+#' @param password What the caller passed as the password, where the
+#'   narrowed class takes one with its workbook.
 #' @param call The environment to blame in the error.
 #'
 #' @return The operation records kept, with any result of an earlier run
@@ -168,6 +170,7 @@ narrow_operations <- function(
   folder,
   overwrite,
   what,
+  password = NULL,
   call = rlang::caller_env()
 ) {
   narrowed <- setdiff(class(obtops), c("obt", target))
@@ -186,7 +189,8 @@ narrow_operations <- function(
 
   given <- c(
     if (!is.null(folder)) "folder",
-    if (!identical(overwrite, FALSE)) "overwrite"
+    if (!identical(overwrite, FALSE)) "overwrite",
+    if (!is.null(password)) "password"
   )
 
   if (length(given) > 0) {

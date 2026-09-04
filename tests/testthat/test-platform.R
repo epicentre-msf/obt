@@ -653,3 +653,59 @@ test_that("the package reaches the system through system2 alone", {
 
   expect_false(any(grepl("\\bshell\\s*\\(", sub("#.*$", "", lines))))
 })
+
+# Keeping a file a failed run wrote --------------------------------------
+
+test_that("a file the run wrote is copied back and the staged copy stays", {
+  work <- withr::local_tempdir()
+  stage <- test_stage(work, file.path(withr::local_tempdir(), "run-1"))
+  made <- file.path(stage$root, "linelist", "measles-2026-obt-summary.txt")
+
+  ensure_folder(dirname(made))
+  writeLines("outcome=refused", made)
+
+  target <- file.path(work, "linelist", "measles-2026-obt-summary.txt")
+  answered <- stage_keep(stage, target)
+
+  expect_identical(answered, absolute_path(target))
+  expect_true(file.exists(target))
+  expect_true(file.exists(made))
+  expect_identical(readLines(target), "outcome=refused")
+})
+
+test_that("keeping a file the run never wrote answers NA and says nothing", {
+  work <- withr::local_tempdir()
+  stage <- test_stage(work, file.path(withr::local_tempdir(), "run-1"))
+
+  expect_silent(
+    expect_true(is.na(stage_keep(stage, file.path(work, "linelist", "x.txt"))))
+  )
+})
+
+test_that("keeping a file on a run that stages nothing copies nothing", {
+  work <- withr::local_tempdir()
+  stage <- test_stage(work, work, staged = FALSE)
+  here <- file.path(work, "kept.txt")
+
+  writeLines("kept", here)
+
+  expect_identical(stage_keep(stage, here), absolute_path(here))
+  expect_identical(readLines(here), "kept")
+})
+
+test_that("a copy that cannot be kept answers NA and says nothing", {
+  work <- withr::local_tempdir()
+  stage <- test_stage(work, file.path(withr::local_tempdir(), "run-1"))
+  made <- file.path(stage$root, "linelist", "x.txt")
+
+  ensure_folder(dirname(made))
+  writeLines("x", made)
+  writeLines(
+    "a file sits where the folder should be",
+    file.path(work, "linelist")
+  )
+
+  expect_silent(
+    expect_true(is.na(stage_keep(stage, file.path(work, "linelist", "x.txt"))))
+  )
+})

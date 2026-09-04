@@ -11,7 +11,8 @@
 # workbook also writes its summary beside the file it touched. When the answer
 # does not arrive the summary file settles it. A refused run writes a summary
 # too, so the file being there says only that Excel got far enough to write
-# it. What it says is the `outcome` key it leads with. A file with no such key
+# it. A summary an earlier run left at the same path goes before the script
+# starts, so the file read back is this run's own. What it says is the `outcome` key it leads with. A file with no such key
 # reads as a run that finished, which is what a binary predating the key
 # writes.
 #
@@ -41,6 +42,10 @@ DRIVER_RUNNERS <- list(
 # The script pairs the package ships, and the arguments each takes in order.
 # Both halves of a pair read the same list, so the two cannot drift. A pair is
 # added here when its scripts are written.
+#
+# A pair that opens a linelist takes the password that file opens with, right
+# after the file itself. An empty one opens the file plain, which is what a
+# linelist built with no password takes.
 DRIVER_PAIRS <- list(
   `designer-generate` = list(
     workbook = "designer",
@@ -52,13 +57,16 @@ DRIVER_PAIRS <- list(
       "name",
       "setup_language",
       "form_language",
-      "ribbon"
+      "ribbon",
+      "password",
+      "debug_password"
     )
   ),
   quiet = list(
     workbook = "any",
     arguments = c(
       "workbook",
+      "password",
       "switch_name",
       "action",
       "value",
@@ -79,15 +87,22 @@ DRIVER_PAIRS <- list(
   ),
   `linelist-geobase` = list(
     workbook = "linelist",
-    arguments = c("linelist", "geo")
+    arguments = c("linelist", "password", "geo")
   ),
   `linelist-import` = list(
     workbook = "linelist",
-    arguments = c("linelist", "from", "rule", "force")
+    arguments = c("linelist", "password", "from", "rule", "force")
   ),
   `linelist-export` = list(
     workbook = "linelist",
-    arguments = c("linelist", "name", "folder", "password", "other")
+    arguments = c(
+      "linelist",
+      "password",
+      "name",
+      "folder",
+      "other_password",
+      "other"
+    )
   )
 )
 
@@ -143,6 +158,9 @@ run_driver <- function(
 
   script <- driver_script(pair, os = os, call = call)
   command <- driver_command(script, args, os = os)
+
+  forget_summary(summary)
+
   ran <- driver_call(command$command, command$args)
 
   answer <- driver_answer(ran$output)
@@ -438,6 +456,24 @@ driver_value <- function(value) {
   as.character(value)
 }
 
+#' One optional value of a recipe, as a wrapper takes it
+#'
+#' A verb records a value it was not given as `NULL`. A wrapper takes `NA`
+#' for a value the run has none of, and `driver_value()` writes that as an
+#' empty string.
+#'
+#' @param value The value recorded on the operation, or `NULL`.
+#'
+#' @return A single string, or `NA`.
+#' @noRd
+optional_text <- function(value) {
+  if (is.null(value)) {
+    return(NA_character_)
+  }
+
+  value
+}
+
 #' Fail when a script pair is unknown
 #'
 #' @param pair The value to check.
@@ -462,6 +498,24 @@ check_driver_pair <- function(pair, call = rlang::caller_env()) {
   }
 
   pair
+}
+
+#' Remove the summary an earlier run left where this one writes
+#'
+#' A run is read back off its summary when its answer is lost, and a refused
+#' run is read off it too. A file an earlier run left at the same path would
+#' be read as this run's own, so it goes before the script starts.
+#'
+#' @param path The summary file, or `NA` where the run writes none.
+#'
+#' @return `NULL`, invisibly.
+#' @noRd
+forget_summary <- function(path) {
+  if (length(path) == 1 && !is.na(path) && file.exists(path)) {
+    unlink(path, force = TRUE)
+  }
+
+  invisible(NULL)
 }
 
 #' Read the summary a workbook wrote beside the file it produced

@@ -20,6 +20,14 @@ LINELIST_EXTENSIONS <- c("xlsb", "xlsx", "xlsm")
 #' filled from the recipe and the linelist is built under `linelist/` in the
 #' working folder, as `<name>.xlsb`.
 #'
+#' A linelist can be built with two passwords, and the designer takes both
+#' off its `Main` sheet. `password` is what the file opens with, and every
+#' verb that opens the linelist later takes it: [obt_linelist()],
+#' [obt_silent_get()] and [obt_silent_set()]. `debug_password` is what the
+#' sheets and the structure of the linelist are protected with; the linelist
+#' keeps it and uses it on its own. Both are hidden wherever a recipe is
+#' printed, and the default is a linelist with no password.
+#'
 #' Like every verb this one records and answers the recipe. Nothing is written
 #' until `obt_commit()` runs.
 #'
@@ -27,6 +35,11 @@ LINELIST_EXTENSIONS <- c("xlsb", "xlsx", "xlsm")
 #' @param name The file name of the linelist, without an extension.
 #' @param overwrite Whether a linelist of that name may be replaced. With
 #'   `FALSE`, the default, the run stops when the file is already there.
+#' @param password The password the linelist opens with. Left out, the
+#'   default, the linelist opens with none.
+#' @param debug_password The password the sheets and the structure of the
+#'   linelist are protected with, which the designer calls the debugging
+#'   password. Left out, the default, the designer protects with an empty one.
 #'
 #' @return The recipe, with the generation operation added.
 #'
@@ -35,15 +48,31 @@ LINELIST_EXTENSIONS <- c("xlsb", "xlsx", "xlsm")
 #' @examples
 #' obt(folder = file.path(tempdir(), "measles")) |>
 #'   obt_designer_generate(name = "measles-2026")
-obt_designer_generate <- function(obtops, name, overwrite = FALSE) {
+#'
+#' obt(folder = file.path(tempdir(), "measles")) |>
+#'   obt_designer_generate(name = "measles-2026", password = "open-sesame")
+obt_designer_generate <- function(
+  obtops,
+  name,
+  overwrite = FALSE,
+  password = NULL,
+  debug_password = NULL
+) {
   check_obt_plain(obtops)
   name <- check_linelist_name(name)
   check_flag(overwrite)
+  password <- check_password(password)
+  debug_password <- check_password(debug_password)
 
   add_operation(
     obtops,
     type = "designer-generate",
-    args = list(name = name, overwrite = overwrite)
+    args = list(
+      name = name,
+      overwrite = overwrite,
+      password = password,
+      debug_password = debug_password
+    )
   )
 }
 

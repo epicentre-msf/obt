@@ -108,7 +108,9 @@ obt_setup_languages("setup.xlsb")
 ```
 
 Last, the linelist itself. `name` is the name of the file the designer writes
-under `linelist/`.
+under `linelist/`. `password` is what the linelist opens with and
+`debug_password` what its sheets are protected with. Both are left out here,
+so the linelist opens with none.
 
 ```{r generate}
 run <- run |>
@@ -188,6 +190,10 @@ obt_linelist(from = "measles-2026.xlsb", folder = "measles-2026") |>
   obt_linelist_import(from = "cases.xlsx") |>
   obt_describe()
 ```
+
+A linelist built with a password is named with `from`, and `password` is what
+every verb of the recipe opens it with. `obt_silent_get()` and
+`obt_silent_set()` take the same `password`.
 
 Both take the workbook itself, as above, or an `obt` recipe to narrow. Narrowing keeps the working folder and the operations of that class, and
 leaves the rest behind. A recipe that names no workbook of its own reads the

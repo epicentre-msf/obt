@@ -4,13 +4,17 @@
 \alias{obt_silent_set}
 \title{Write the open-time switch of a workbook}
 \usage{
-obt_silent_set(path, value = SILENT_ON)
+obt_silent_set(path, value = SILENT_ON, password = NULL)
 }
 \arguments{
 \item{path}{The workbook to write. A setup, a designer, or a generated
 linelist.}
 
 \item{value}{\code{"Yes"} or \code{"No"}.}
+
+\item{password}{The password the workbook opens with. A linelist built
+with one takes it here. Left out, the default, the workbook is opened
+with none.}
 }
 \value{
 The value the workbook holds once the run is over, invisibly.
@@ -34,6 +38,7 @@ This opens Excel, so it takes macOS or Windows.
 \examples{
 \dontrun{
 obt_silent_set("~/measles/linelist/measles-2026.xlsb", "Yes")
+obt_silent_set("~/measles/linelist/measles-2026.xlsb", "Yes", password = "pw")
 }
 }
 \seealso{

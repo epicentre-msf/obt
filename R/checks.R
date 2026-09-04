@@ -98,3 +98,49 @@ check_file_there <- function(path, what, call = rlang::caller_env()) {
     call = call
   )
 }
+
+#' Check a password a verb was given
+#'
+#' A password is kept as it stands. `check_string()` trims what it is given,
+#' and a password can open or close on a space. `NULL` is no password, and it
+#' is what every verb takes to begin with.
+#'
+#' @param password The value to check.
+#' @param arg The name of the argument it came from.
+#' @param call The environment to blame in the error.
+#'
+#' @return The password, or `NULL`.
+#' @noRd
+check_password <- function(
+  password,
+  arg = rlang::caller_arg(password),
+  call = rlang::caller_env()
+) {
+  force(arg)
+
+  if (is.null(password)) {
+    return(NULL)
+  }
+
+  if (!is.character(password) || length(password) != 1 || is.na(password)) {
+    cli::cli_abort(
+      c(
+        "{.arg {arg}} must be a single string.",
+        "x" = "You supplied {.obj_type_friendly {password}}."
+      ),
+      call = call
+    )
+  }
+
+  if (!nzchar(password)) {
+    cli::cli_abort(
+      c(
+        "{.arg {arg}} must carry a value.",
+        "i" = "Leave it out where the workbook has no password."
+      ),
+      call = call
+    )
+  }
+
+  password
+}

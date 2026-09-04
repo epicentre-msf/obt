@@ -139,8 +139,9 @@ run_linelist_export <- function(obtops, operation, stage, state) {
     linelist = linelist,
     name = export_name(operation$args$type, operation$args$name),
     to = to,
-    password = export_text(operation$args$password),
-    other = export_text(other)
+    password = linelist_password(state),
+    other = optional_text(other),
+    other_password = optional_text(operation$args$password)
   )
 
   written <- export_written(ran, to = to)
@@ -193,24 +194,6 @@ export_name <- function(type, name) {
   }
 
   name
-}
-
-#' One optional value of the export, as the driver takes it
-#'
-#' A recipe that recorded none hands `NA`, which the driver writes as an empty
-#' string. The linelist reads an empty password as a workbook with no
-#' password, and an empty second linelist as the one it is running in.
-#'
-#' @param value The value recorded on the operation, or `NULL`.
-#'
-#' @return A single string, or `NA`.
-#' @noRd
-export_text <- function(value) {
-  if (is.null(value)) {
-    return(NA_character_)
-  }
-
-  value
 }
 
 #' The files an export run says it wrote
@@ -372,8 +355,8 @@ check_export_other <- function(
 
 #' Check the password the second linelist opens with
 #'
-#' `check_string()` trims what it is given, and a password can open or close
-#' on a space, so this one is checked on its own and kept as it stands.
+#' A password with no second linelist to open is turned down here. The value
+#' itself is checked the way every password is, and kept as it stands.
 #'
 #' @param password The value to check.
 #' @param other The second linelist, already checked.
@@ -406,25 +389,5 @@ check_export_password <- function(
     )
   }
 
-  if (!is.character(password) || length(password) != 1 || is.na(password)) {
-    cli::cli_abort(
-      c(
-        "{.arg {arg}} must be a single string.",
-        "x" = "You supplied {.obj_type_friendly {password}}."
-      ),
-      call = call
-    )
-  }
-
-  if (!nzchar(password)) {
-    cli::cli_abort(
-      c(
-        "{.arg {arg}} must carry a value.",
-        "i" = "Leave it out where that linelist has no password."
-      ),
-      call = call
-    )
-  }
-
-  password
+  check_password(password, arg = arg, call = call)
 }

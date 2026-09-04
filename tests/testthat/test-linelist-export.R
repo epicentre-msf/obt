@@ -359,8 +359,9 @@ test_that("the second linelist and its password cross as recorded", {
     state = list(linelist = built_linelist(folder, "measles-2026"))
   )
 
-  expect_identical(driver$seen$password, "pw")
+  expect_identical(driver$seen$other_password, "pw")
   expect_identical(driver$seen$other, other)
+  expect_true(is.na(driver$seen$password))
 })
 
 test_that("a second linelist moved between the verb and the run stops it", {
@@ -413,6 +414,7 @@ test_that("a run with no password hands the workbook nothing", {
   )
 
   expect_true(is.na(driver$seen$password))
+  expect_true(is.na(driver$seen$other_password))
   expect_true(is.na(driver$seen$other))
 })
 
@@ -519,4 +521,35 @@ test_that("the export is refused before Excel opens while it is waiting", {
     linelist_recipe(folder) |> obt_linelist_export() |> obt_commit(),
     "on the workbooks"
   )
+})
+
+test_that("the export opens a protected linelist with its password", {
+  folder <- withr::local_tempdir()
+  recipe <- linelist_recipe(folder)
+  driver <- test_linelist_driver(linelist_answer("export", "out.xlsx"))
+  stage <- test_stage(folder, folder, staged = FALSE)
+
+  local_mocked_bindings(driver_linelist_export = driver$call)
+
+  run_linelist_export(
+    recipe,
+    new_operation(
+      "linelist-export",
+      list(
+        type = "migration",
+        name = NULL,
+        to = "export",
+        other = NULL,
+        password = NULL
+      )
+    ),
+    stage = stage,
+    state = list(
+      linelist = built_linelist(folder),
+      linelist_password = "open-pw"
+    )
+  )
+
+  expect_identical(driver$seen$password, "open-pw")
+  expect_true(is.na(driver$seen$other_password))
 })

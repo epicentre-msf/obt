@@ -135,6 +135,8 @@ obt_describe(run)
 #> 7. Generate the linelist `designer-generate`
 #>    name: "measles-2026"
 #>    overwrite: FALSE
+#>    password: (not set)
+#>    debug_password: (not set)
 ```
 
 ``` r
@@ -194,6 +196,7 @@ obt_linelist(from = "measles-2026.xlsb", folder = "measles-2026") |>
 #> 1. Add the linelist `linelist-add`
 #>    from: "measles-2026.xlsb"
 #>    overwrite: FALSE
+#>    password: (not set)
 #> 2. Import a geobase `linelist-geobase`
 #>    path: "geobase.xlsx"
 #> 3. Import a migrated file `linelist-import`

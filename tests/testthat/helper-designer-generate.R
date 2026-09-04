@@ -70,6 +70,8 @@ test_generation <- function(
     form_language,
     geo = NA_character_,
     ribbon = NA_character_,
+    password = NA_character_,
+    debug_password = NA_character_,
     summary = summary_path(folder, name),
     os = os_name(),
     call = rlang::caller_env()
@@ -84,6 +86,8 @@ test_generation <- function(
       form_language = form_language,
       geo = geo,
       ribbon = ribbon,
+      password = password,
+      debug_password = debug_password,
       summary = summary
     )
 
@@ -113,8 +117,21 @@ test_generation <- function(
 }
 
 # The generation record a recipe carries, with the run's own arguments.
-generation_operation <- function(name = "measles-2026", overwrite = FALSE) {
-  new_operation("designer-generate", list(name = name, overwrite = overwrite))
+generation_operation <- function(
+  name = "measles-2026",
+  overwrite = FALSE,
+  password = NULL,
+  debug_password = NULL
+) {
+  new_operation(
+    "designer-generate",
+    list(
+      name = name,
+      overwrite = overwrite,
+      password = password,
+      debug_password = debug_password
+    )
+  )
 }
 
 # What the operations before the generation left behind.

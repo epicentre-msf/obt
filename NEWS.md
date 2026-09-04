@@ -34,7 +34,8 @@ can be scripted from R.
   `obt_linelist_geobase()`, `obt_linelist_import()` and
   `obt_linelist_export()` are the verbs that work on it. Both narrowings take
   the workbook itself or an `obt` recipe, and a verb takes only the class its
-  workbook belongs to.
+  workbook belongs to. A linelist built with a password is named with `from`
+  and its `password`, and every verb opens it with that.
 * `obt_setup_convert()` fills a fresh copy of the release's empty setup from a
   setup you already have. The route runs through an `.xlsx`.
 * `obt_fake()` makes up records against a setup: one table per worksheet the
@@ -44,7 +45,8 @@ can be scripted from R.
 * `obt_designer_languages()` and `obt_languages()` carry and print the two
   languages a linelist takes: the dictionary language and the interface one.
 * `obt_designer_generate()` fills the designer's `Main` sheet and generates the
-  linelist.
+  linelist. `password` is what the linelist opens with and `debug_password`
+  what its sheets and structure are protected with. Both default to none.
 * `obt_designer_geobase()` points a generation at a geobase, and
   `obt_linelist_geobase()` reads one into a linelist that is already built.
 * `obt_linelist_import()` reads a migration file into a linelist, and stops
@@ -52,12 +54,15 @@ can be scripted from R.
 * `obt_linelist_export()` writes a migration file or runs an export the setup
   defines, behind one `type` argument.
 * `obt_silent_get()` and `obt_silent_set()` read and write what a workbook does
-  with the message boxes it shows while it opens.
+  with the message boxes it shows while it opens. Both take the `password` a
+  protected linelist opens with.
 
 ## The machine
 
 * `obt_platform()` reads the operating system and, on macOS, the staging folder
   inside Excel's own container and the version of Excel installed.
-  `obt_staging_clean()` empties what an interrupted run left behind.
+  `obt_staging_clean()` empties what an interrupted run left behind. A
+  generation that stops copies the summary the designer wrote back to the
+  working folder before the staging folder is cleared.
 * Running a recipe needs macOS or Windows. Everywhere else the package loads,
   recipes build and print, and only `obt_commit()` will not work.

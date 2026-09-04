@@ -25,6 +25,8 @@ QUIET_VALUE_KEY <- "silent"
 #' @param action `"read"` or `"write"`.
 #' @param value The value a write stores. A read passes `NA`, which reaches
 #'   the script as an empty string.
+#' @param password The password the workbook opens with. `NA` opens it with
+#'   none.
 #' @param switch_name The name the workbook keeps the switch under.
 #' @param summary The file the run writes its answer to.
 #' @param os The operating system to build the call for.
@@ -36,6 +38,7 @@ driver_quiet <- function(
   workbook,
   action,
   value = NA_character_,
+  password = NA_character_,
   switch_name = SILENT_SWITCH_NAME,
   summary,
   os = os_name(),
@@ -47,6 +50,7 @@ driver_quiet <- function(
       "quiet",
       list(
         workbook = workbook,
+        password = password,
         switch_name = switch_name,
         action = action,
         value = value,

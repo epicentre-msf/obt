@@ -4,7 +4,7 @@
 \alias{obt_linelist}
 \title{Start a linelist recipe}
 \usage{
-obt_linelist(from, folder = NULL, overwrite = FALSE)
+obt_linelist(from, folder = NULL, overwrite = FALSE, password = NULL)
 }
 \arguments{
 \item{from}{A linelist workbook, or an \code{obt} recipe to narrow.}
@@ -16,6 +16,10 @@ a linelist workbook. A narrowed recipe carries the folder it came with.}
 be replaced. With \code{FALSE}, the default, the run stops when one is there,
 because that file carries whatever the linelist verbs have written into
 it.}
+
+\item{password}{The password the linelist opens with. Give it with a
+linelist workbook that was built with one. Left out, the default, the
+linelist is opened with none.}
 }
 \value{
 An object of class \code{obt_linelist}.
@@ -41,6 +45,12 @@ A recipe narrowed from an \code{obt} names no linelist of its own. The run reads
 the one file under \verb{linelist/} in the working folder, so a linelist built
 by an earlier run is picked up. A folder holding more than one is refused,
 and naming the file with \code{from} is what settles it.
+
+A linelist built with a password opens with that password, and every verb
+of the recipe opens the file. Give the password with the workbook, and the
+run hands it to each of them. It is hidden wherever a recipe is printed. A
+narrowed recipe reads the file off the folder and takes no password, so a
+linelist that opens with one is named with \code{from}.
 
 Like every verb this one records and answers the recipe. Nothing is copied
 until \code{\link[=obt_commit]{obt_commit()}} runs.

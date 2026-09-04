@@ -148,7 +148,11 @@ run_linelist_geobase <- function(obtops, operation, stage, state) {
   linelist <- linelist_target(obtops, state)
   geo <- take_geobase(obtops, operation$args$path)
 
-  ran <- driver_linelist_geobase(linelist = linelist, geo = geo)
+  ran <- driver_linelist_geobase(
+    linelist = linelist,
+    geo = geo,
+    password = linelist_password(state)
+  )
 
   check_geobase_read(ran, geo = geo)
 
@@ -182,6 +186,7 @@ run_linelist_import <- function(obtops, operation, stage, state) {
       from = from,
       rule = operation$args$rule,
       force = force_word(forced),
+      password = linelist_password(state),
       summary = summary
     ),
     error = function(cnd) {
@@ -238,6 +243,24 @@ linelist_target <- function(obtops, state, call = rlang::caller_env()) {
     ),
     call = call
   )
+}
+
+#' The password the linelist opens with
+#'
+#' A recipe that added or generated the linelist with a password left it in
+#' the state, beside the linelist itself. A linelist with none answers `NA`,
+#' and the driver hands the script an empty value.
+#'
+#' @param state What the operations before it left behind.
+#'
+#' @return A single string, or `NA`.
+#' @noRd
+linelist_password <- function(state) {
+  if (is_set(state$linelist_password)) {
+    return(state$linelist_password)
+  }
+
+  NA_character_
 }
 
 #' The linelists a working folder already holds
