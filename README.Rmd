@@ -30,7 +30,7 @@ steps normally done by clicking through Excel — download a release, fill a
 setup, add a geobase, generate a linelist, run an export — are written as R
 code and run in one go.
 
-Each verb records one operation takes the `obt` object as input. 
+Each verb records one operation and takes the `obt` object as input. 
 The verbs chain with `|>`. Nothing reaches
 the disk while a recipe is built. `obt_commit()` is the one function that
 opens Excel.

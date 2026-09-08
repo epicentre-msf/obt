@@ -1,8 +1,11 @@
 name: release
 
-# Publish a GitHub release whose notes are the matching section of NEWS.md.
-# Triggered by pushing a version tag (e.g. v0.1.0), or run by hand from the
-# Actions tab for a version you name.
+# Publish a GitHub release for one version: the notes are the matching
+# section of NEWS.md, and the files are the package as R builds it. The
+# source tarball is built on Ubuntu, and a binary on Windows and on macOS,
+# the two systems the package opens Excel on. Triggered by pushing a version
+# tag (e.g. v0.1.0), or run by hand from the Actions tab for a version you
+# name.
 on:
   push:
     tags:
@@ -17,8 +20,11 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  version:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
 
@@ -35,9 +41,95 @@ jobs:
           echo "version=${version}" >> "$GITHUB_OUTPUT"
           echo "tag=${tag}" >> "$GITHUB_OUTPUT"
 
-      - name: Pull this version's notes out of NEWS.md
+      - name: Check that DESCRIPTION carries this version
         run: |
           version="${{ steps.version.outputs.version }}"
+          described="$(awk '/^Version:/ { print $2 }' DESCRIPTION)"
+          if [ "$described" != "$version" ]; then
+            echo "::error::DESCRIPTION says ${described}, the release is ${version}."
+            exit 1
+          fi
+
+  build:
+    needs: version
+    runs-on: ${{ matrix.config.os }}
+    name: build ${{ matrix.config.label }}
+
+    strategy:
+      fail-fast: true
+      matrix:
+        config:
+          - {os: ubuntu-latest, label: source, binary: 'false'}
+          - {os: windows-latest, label: windows, binary: 'true'}
+          - {os: macos-latest, label: macos, binary: 'true'}
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      # See R-CMD-check.yaml: keep the repo's renv autoloader off in CI so the
+      # dependency cache saves and installs come from DESCRIPTION.
+      RENV_CONFIG_AUTOLOADER_ENABLED: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'release'
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::pkgbuild
+
+      - name: Build the package
+        shell: Rscript {0}
+        run: |
+          binary <- identical("${{ matrix.config.binary }}", "true")
+          dir.create("dist", showWarnings = FALSE)
+
+          built <- pkgbuild::build(
+            ".",
+            dest_path = "dist",
+            binary = binary,
+            args = if (binary) NULL else "--no-manual"
+          )
+
+          # A binary fits one R version and one system, so the file says which.
+          if (binary) {
+            r <- paste0("R", R.version$major, ".", sub("\\..*$", "", R.version$minor))
+            named <- sub(
+              "^(obt_[^_]+)(\\.[a-z]+)$",
+              paste0("\\1_${{ matrix.config.label }}_", r, "\\2"),
+              basename(built)
+            )
+            file.rename(built, file.path("dist", named))
+          }
+
+          print(list.files("dist"))
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package-${{ matrix.config.label }}
+          path: dist/*
+          if-no-files-found: error
+
+  release:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: package-*
+          path: dist
+          merge-multiple: true
+
+      - name: Pull this version's notes out of NEWS.md
+        run: |
+          version="${{ needs.version.outputs.version }}"
           # Print the lines under the "# ... <version>" heading, stopping at the
           # next top-level heading. index() is a fixed-string match, so the dots
           # in the version are taken literally.
@@ -52,14 +144,16 @@ jobs:
           echo "----- release notes -----"
           cat release-notes.md
 
-      - name: Create or update the GitHub release
+      - name: Create or update the GitHub release, with the built package
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag="${{ steps.version.outputs.tag }}"
-          title="obt ${{ steps.version.outputs.version }}"
+          tag="${{ needs.version.outputs.tag }}"
+          title="obt ${{ needs.version.outputs.version }}"
           if gh release view "$tag" >/dev/null 2>&1; then
             gh release edit "$tag" --title "$title" --notes-file release-notes.md
           else
             gh release create "$tag" --title "$title" --notes-file release-notes.md
           fi
+          ls -l dist
+          gh release upload "$tag" dist/* --clobber
