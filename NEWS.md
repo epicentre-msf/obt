@@ -64,5 +64,7 @@ can be scripted from R.
   `obt_staging_clean()` empties what an interrupted run left behind. A
   generation that stops copies the summary the designer wrote back to the
   working folder before the staging folder is cleared.
+* `obt_close_excel()` closes every Excel that is running. Unsaved work is lost, so it asks confirmation
+  first.
 * Running a recipe needs macOS or Windows. Everywhere else the package loads,
   recipes build and print, and only `obt_commit()` will not work.
