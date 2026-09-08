@@ -1,4 +1,4 @@
-# obt 0.0.0.9000
+# obt 0.0.1
 
 First working version. The package builds a recipe of operations and runs it
 in one go, so the input/output steps normally clicked through the OutbreakTools workbooks
