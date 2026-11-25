@@ -13,11 +13,29 @@ test_that("the run hands the designer every value it reads", {
   )
 
   expect_identical(driver$calls, 1L)
-  expect_identical(basename(driver$seen$designer), "designer_dev-latest.xlsb")
-  expect_identical(basename(driver$seen$setup), "setup.xlsb")
+  expect_identical(basename(driver$seen$designer), "designer_dev-latest.xlsm")
+  expect_identical(basename(driver$seen$setup), "setup.xlsm")
   expect_identical(driver$seen$name, "measles-2026")
   expect_identical(driver$seen$setup_language, "English")
   expect_identical(driver$seen$form_language, "ENG")
+})
+
+test_that("a folder of older .xlsb workbooks still builds", {
+  local_build_in_place_said()
+  folder <- withr::local_tempdir()
+  recipe <- generation_folder(folder, extension = "xlsb")
+  driver <- test_generation()
+  local_mocked_bindings(driver_generate = driver$generate)
+
+  run_designer_generate(
+    recipe,
+    generation_operation(),
+    stage = test_stage(folder, folder, staged = FALSE),
+    state = generation_state()
+  )
+
+  expect_identical(basename(driver$seen$designer), "designer_dev-latest.xlsb")
+  expect_identical(basename(driver$seen$setup), "setup.xlsb")
 })
 
 test_that("the linelist is written into the linelist folder", {
@@ -53,7 +71,47 @@ test_that("the run answers the files it produced", {
 
   expect_named(answer$produced, c("linelist", "summary", "log"))
   expect_true(all(file.exists(answer$produced)))
+  expect_identical(basename(answer$produced[["linelist"]]), "measles-2026.xlsm")
+})
+
+test_that("the run takes the .xlsb linelist an older designer writes", {
+  local_build_in_place_said()
+  folder <- withr::local_tempdir()
+  recipe <- generation_folder(folder, extension = "xlsb")
+  driver <- test_generation(values = c(linelist = "measles-2026.xlsb"))
+  local_mocked_bindings(driver_generate = driver$generate)
+
+  answer <- run_designer_generate(
+    recipe,
+    generation_operation(),
+    stage = test_stage(folder, folder, staged = FALSE),
+    state = generation_state()
+  )
+
   expect_identical(basename(answer$produced[["linelist"]]), "measles-2026.xlsb")
+  expect_identical(answer$state$linelist, answer$produced[["linelist"]])
+})
+
+test_that("a staged run moves out the linelist in the format it was written", {
+  local_build_in_place_said()
+  folder <- withr::local_tempdir()
+  root <- withr::local_tempdir()
+  recipe <- generation_folder(folder)
+  driver <- test_generation(values = c(linelist = "measles-2026.xlsb"))
+  local_mocked_bindings(driver_generate = driver$generate)
+
+  answer <- run_designer_generate(
+    recipe,
+    generation_operation(),
+    stage = test_stage(folder, root),
+    state = generation_state()
+  )
+
+  expect_identical(
+    answer$produced[["linelist"]],
+    absolute_path(file.path(folder, "linelist", "measles-2026.xlsb"))
+  )
+  expect_true(file.exists(answer$produced[["linelist"]]))
 })
 
 test_that("the counts of the run are kept for the record", {
@@ -109,7 +167,7 @@ test_that("a designer already in the folder is used", {
     state = generation_state()
   )
 
-  expect_identical(basename(driver$seen$designer), "designer_main-latest.xlsb")
+  expect_identical(basename(driver$seen$designer), "designer_main-latest.xlsm")
 })
 
 test_that("the designer the recipe added wins over the one on disk", {
@@ -239,6 +297,85 @@ test_that("overwrite lets the run write over a linelist", {
   )
 })
 
+test_that("an .xlsb linelist of that name stops the run too", {
+  local_build_in_place_said()
+  folder <- withr::local_tempdir()
+  recipe <- generation_folder(folder)
+  ensure_folder(obt_paths(recipe)$linelist)
+  writeLines("old", linelist_path(recipe, "measles-2026", "xlsb"))
+
+  expect_error(
+    run_designer_generate(
+      recipe,
+      generation_operation(),
+      stage = test_stage(folder, folder, staged = FALSE),
+      state = generation_state()
+    ),
+    "measles-2026.xlsb.*already there"
+  )
+})
+
+test_that("the run takes the new .xlsm and ignores an earlier .xlsb", {
+  local_build_in_place_said()
+  folder <- withr::local_tempdir()
+  recipe <- generation_folder(folder)
+  ensure_folder(obt_paths(recipe)$linelist)
+  writeLines("old", linelist_path(recipe, "measles-2026", "xlsb"))
+
+  driver <- test_generation()
+  local_mocked_bindings(driver_generate = driver$generate)
+
+  answer <- run_designer_generate(
+    recipe,
+    generation_operation(overwrite = TRUE),
+    stage = test_stage(folder, folder, staged = FALSE),
+    state = generation_state()
+  )
+
+  expect_identical(basename(answer$produced[["linelist"]]), "measles-2026.xlsm")
+})
+
+test_that("with no linelist in the summary, the run takes the .xlsm first", {
+  local_build_in_place_said()
+  folder <- withr::local_tempdir()
+  recipe <- generation_folder(folder)
+  ensure_folder(obt_paths(recipe)$linelist)
+  writeLines("old", linelist_path(recipe, "measles-2026", "xlsb"))
+
+  driver <- test_generation(values = c(sheets = "12"))
+  local_mocked_bindings(driver_generate = driver$generate)
+
+  expect_warning(
+    answer <- run_designer_generate(
+      recipe,
+      generation_operation(overwrite = TRUE),
+      stage = test_stage(folder, folder, staged = FALSE),
+      state = generation_state()
+    ),
+    "named no linelist"
+  )
+
+  expect_identical(basename(answer$produced[["linelist"]]), "measles-2026.xlsm")
+})
+
+test_that("the error names the linelist the designer did not write", {
+  local_build_in_place_said()
+  folder <- withr::local_tempdir()
+  recipe <- generation_folder(folder)
+  driver <- test_generation(writes = FALSE)
+  local_mocked_bindings(driver_generate = driver$generate)
+
+  expect_error(
+    run_designer_generate(
+      recipe,
+      generation_operation(),
+      stage = test_stage(folder, folder, staged = FALSE),
+      state = generation_state()
+    ),
+    "measles-2026.xlsm.*was not written"
+  )
+})
+
 test_that("a run with no geobase and no ribbon hands neither over", {
   local_build_in_place_said()
   folder <- withr::local_tempdir()
@@ -265,7 +402,7 @@ test_that("a geobase and a ribbon the recipe holds are handed over", {
     folder,
     "obt",
     "dev",
-    "_ribbontemplate_dev-latest.xlsb"
+    "_ribbontemplate_dev-latest.xlsm"
   )
 
   geobase <- file.path(folder, "geo", "geobase.xlsb")

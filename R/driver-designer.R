@@ -8,8 +8,9 @@
 #' Generate a linelist
 #'
 #' Writes the nine entries the designer's `Main` sheet reads, then runs the
-#' generation callback. The designer writes the linelist under `folder`, as
-#' `<name>.xlsb`, and its summary beside it.
+#' generation callback. The designer writes the linelist under `folder` as
+#' `<name>.xlsm`, or `<name>.xlsb` for an older designer, and writes its
+#' summary beside it.
 #'
 #' @param designer The designer workbook.
 #' @param setup The setup file the designer reads.

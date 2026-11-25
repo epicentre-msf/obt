@@ -2,17 +2,21 @@
 #
 # Neither file is ever opened: the run resolves paths, hands them to the
 # driver, and the driver is mocked. What matters is that each one is where the
-# run looks for it, under the name the channel zip gives it.
+# run looks for it, under the name the channel zip gives it. `extension` sets
+# the format of every workbook: `"xlsm"` for current releases, `"xlsb"` for
+# older ones.
 generation_folder <- function(
   folder,
   channel = "dev",
   designer = TRUE,
   setup = TRUE,
-  ribbon = FALSE
+  ribbon = FALSE,
+  extension = "xlsm"
 ) {
   recipe <- obt(folder = folder)
   paths <- obt_paths(recipe)
   channel_folder <- paths[[channel_spec(channel)$entry]]
+  ext <- paste0(".", extension)
 
   ensure_folder(channel_folder)
   ensure_folder(paths$setup)
@@ -20,7 +24,7 @@ generation_folder <- function(
   if (isTRUE(designer)) {
     writeLines(
       "designer",
-      file.path(channel_folder, paste0("designer_", channel, "-latest.xlsb"))
+      file.path(channel_folder, paste0("designer_", channel, "-latest", ext))
     )
   }
 
@@ -29,13 +33,13 @@ generation_folder <- function(
       "ribbon",
       file.path(
         channel_folder,
-        paste0("_ribbontemplate_", channel, "-latest.xlsb")
+        paste0("_ribbontemplate_", channel, "-latest", ext)
       )
     )
   }
 
   if (isTRUE(setup)) {
-    writeLines("setup", paths$setup_file)
+    writeLines("setup", file.path(paths$setup, paste0("setup", ext)))
   }
 
   recipe
@@ -46,9 +50,12 @@ generation_folder <- function(
 # The mock stands where `driver_generate()` stands. It records everything it
 # was handed, writes the files a real run would leave behind, and answers the
 # run record the seam answers. `state$seen` is what a test reads back.
+#
+# The mock writes the linelist in the format the summary names. When the
+# summary names none, it uses `extension`.
 test_generation <- function(
   values = c(
-    linelist = "measles-2026.xlsb",
+    linelist = "measles-2026.xlsm",
     log = "measles-2026-log.txt",
     sheets = "12",
     variables = "240",
@@ -56,8 +63,13 @@ test_generation <- function(
     failed = "0"
   ),
   report = c("The build finished."),
-  writes = TRUE
+  writes = TRUE,
+  extension = "xlsm"
 ) {
+  if ("linelist" %in% names(values)) {
+    extension <- tools::file_ext(values[["linelist"]])
+  }
+
   state <- new.env(parent = emptyenv())
   state$calls <- 0L
 
@@ -93,7 +105,10 @@ test_generation <- function(
 
     if (isTRUE(writes)) {
       ensure_folder(folder)
-      writeLines("linelist", file.path(folder, paste0(name, ".xlsb")))
+      writeLines(
+        "linelist",
+        file.path(folder, paste0(name, ".", extension))
+      )
       writeLines("summary", summary)
 
       if ("log" %in% names(values)) {

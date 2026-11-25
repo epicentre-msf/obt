@@ -33,6 +33,10 @@ The layout is fixed:
 
 Reading the paths creates nothing. A folder is created when the run that
 needs it starts.
+
+The working setup keeps the extension of its source, so it sits at
+\code{setup/setup.xlsm} or \code{setup/setup.xlsb}. \code{setup_file} names the one the
+folder holds, or \code{setup/setup.xlsm} when the folder holds none.
 }
 \examples{
 paths <- obt_paths(obt(folder = file.path(tempdir(), "measles")))

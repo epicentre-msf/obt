@@ -132,6 +132,19 @@ test_that("every language the setup holds is accepted", {
   }
 })
 
+test_that("the dictionary check reads an .xlsb working setup too", {
+  recipe <- setup_in_folder(withr::local_tempdir(), extension = "xlsb")
+
+  expect_error(
+    obt_designer_languages(recipe, dict = "Klingon"),
+    "must be a language"
+  )
+  expect_identical(
+    obt_designer_languages(recipe, dict = "arabic")$operations[[1]]$args$dict,
+    "Arabic"
+  )
+})
+
 test_that("a non-string dict is refused", {
   recipe <- obt(folder = withr::local_tempdir())
 
@@ -221,7 +234,7 @@ test_that("a folder with no setup says where the list will be read from", {
   out <- printed(obt_languages(obt(folder = folder)))
 
   expect_match(out, "holds no setup yet")
-  expect_match(out, "setup.xlsb")
+  expect_match(out, "setup.xlsm")
 })
 
 test_that("a folder with a setup lists the languages it holds", {

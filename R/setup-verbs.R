@@ -244,10 +244,10 @@ check_exchange_file <- function(
   from <- check_string(from, arg = arg, call = call)
 
   wanted <- paste0(".", SETUP_EXCHANGE_EXTENSION)
-  workbook <- paste0(".", SETUP_EXTENSION)
   extension <- tolower(tools::file_ext(from))
+  workbook <- paste0(".", extension)
 
-  if (identical(extension, SETUP_EXTENSION)) {
+  if (extension %in% SETUP_EXTENSIONS) {
     cli::cli_abort(
       c(
         "{.arg {arg}} must end in {.val {wanted}}.",

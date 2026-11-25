@@ -26,13 +26,13 @@ TRANSLATIONS_SHEET <- "Translations"
 
 # How many rows sit above the header, per format. A setup workbook carries a
 # title block above its table; the .xlsx an export writes starts at the header.
-TRANSLATIONS_SKIP <- c(xlsb = 3L, xlsx = 0L)
+TRANSLATIONS_SKIP <- c(xlsm = 3L, xlsb = 3L, xlsx = 0L)
 
 #' Read the languages of a setup
 #'
 #'
-#' @param path Path to a setup file. Either an `.xlsb` setup or the `.xlsx` an
-#'   export of one writes.
+#' @param path Path to a setup file. It is an `.xlsm` or `.xlsb` setup, or the
+#'   `.xlsx` that a setup export writes.
 #'
 #' @return A character vector of language names, in the order the file holds
 #'   them.
@@ -90,10 +90,11 @@ check_setup_path <- function(path) {
   }
 
   extension <- tolower(tools::file_ext(path))
+  known <- names(TRANSLATIONS_SKIP)
 
-  if (!extension %in% names(TRANSLATIONS_SKIP)) {
+  if (!extension %in% known) {
     cli::cli_abort(c(
-      "{.arg path} must name an {.val xlsb} or an {.val xlsx} file.",
+      "{.arg path} must name an {.or {.val {known}}} file.",
       "x" = "{.file {path}} is an {.val {extension}} file."
     ))
   }
@@ -113,14 +114,18 @@ read_translations_header <- function(path, extension) {
 
   header <- switch(
     extension,
-    xlsx = read_header_xlsx(path, skip),
+    xlsx = ,
+    xlsm = read_header_xlsx(path, skip),
     xlsb = read_header_xlsb(path, skip)
   )
 
   as.character(header)
 }
 
-#' Read a translations header out of an .xlsx file
+#' Read a translations header out of an .xlsx or an .xlsm file
+#'
+#' readxlsb reads only `.xlsb` files. An `.xlsm` file is an `.xlsx` file with
+#' macros, and readxl reads both.
 #'
 #' @param path Path to the file.
 #' @param skip Rows above the header.

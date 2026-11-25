@@ -265,6 +265,9 @@ linelist_password <- function(state) {
 
 #' The linelists a working folder already holds
 #'
+#' A linelist and its `.xlsb` copy share one name. The function answers each
+#' name once, in the first format of `LINELIST_EXTENSIONS` found on disk.
+#'
 #' @param obtops The recipe.
 #'
 #' @return The absolute paths of every linelist under `linelist/`.
@@ -277,11 +280,12 @@ linelists_on_disk <- function(obtops) {
   }
 
   found <- list.files(folder, full.names = TRUE)
-  found <- found[
-    tolower(tools::file_ext(found)) == LINELIST_EXTENSION
-  ]
+  rank <- match(tolower(tools::file_ext(found)), LINELIST_EXTENSIONS)
 
-  vapply(found, absolute_path, character(1), USE.NAMES = FALSE)
+  found <- found[!is.na(rank)][order(rank[!is.na(rank)])]
+  found <- found[!duplicated(tools::file_path_sans_ext(basename(found)))]
+
+  vapply(sort(found), absolute_path, character(1), USE.NAMES = FALSE)
 }
 
 #' Read what the geobase run says it took in

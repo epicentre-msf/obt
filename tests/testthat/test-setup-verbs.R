@@ -59,17 +59,21 @@ test_that("a file the import cannot find is refused at the verb", {
   )
 })
 
-test_that("an .xlsb handed to the import is refused, and the route named", {
+test_that("a setup workbook handed to the import is refused, and the route named", {
   folder <- withr::local_tempdir()
 
-  expect_error(
-    setup_recipe(folder) |> obt_setup_import(from = setup_workbook()),
-    "must end in"
-  )
-  expect_error(
-    setup_recipe(folder) |> obt_setup_import(from = setup_workbook()),
-    "takes a click"
-  )
+  for (extension in c("xlsm", "xlsb")) {
+    workbook <- setup_workbook(extension)
+
+    expect_error(
+      setup_recipe(folder) |> obt_setup_import(from = workbook),
+      paste0("ends in .*\\.", extension)
+    )
+    expect_error(
+      setup_recipe(folder) |> obt_setup_import(from = workbook),
+      "takes a click"
+    )
+  }
 })
 
 test_that("any other extension handed to the import is refused", {

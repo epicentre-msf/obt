@@ -29,8 +29,8 @@ This opens Excel, so it takes macOS or Windows.
 }
 \examples{
 \dontrun{
-obt_silent_get("~/measles/linelist/measles-2026.xlsb")
-obt_silent_get("~/measles/linelist/measles-2026.xlsb", password = "pw")
+obt_silent_get("~/measles/linelist/measles-2026.xlsm")
+obt_silent_get("~/measles/linelist/measles-2026.xlsm", password = "pw")
 }
 }
 \seealso{

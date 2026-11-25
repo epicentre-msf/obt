@@ -13,9 +13,11 @@
 # The class is a subset of `obt` and it is built as one, so every printer,
 # every path and the run itself read it the way they read any recipe.
 
-# The extension a setup workbook carries. The workbook holds the code the
-# setup verbs run.
-SETUP_EXTENSION <- "xlsb"
+# The extensions a setup workbook carries. The workbook holds the code the
+# setup verbs run. OutbreakTools ships its setups as .xlsm. Every older setup
+# is an .xlsb, and the verbs drive both the same way. `obt_paths()` looks for
+# the working setup in this order.
+SETUP_EXTENSIONS <- c("xlsm", "xlsb")
 
 # The extension of the file a setup is written out to and read back from. It
 # carries the content of a setup.
@@ -45,11 +47,11 @@ SETUP_OPERATION_TYPES <- c(
 #'
 #' `from` takes either of two things:
 #'
-#' * **A setup workbook**, ending in `.xlsb`. The recipe records the copy of
-#'   that file into the working folder, and `folder` says where. The file
-#'   itself is an input and stays as it is: the copy under `setup/source/`
-#'   keeps its name, and the copy at `setup/setup.xlsb` is what the verbs
-#'   work on.
+#' * **A setup workbook**, ending in `.xlsm` or `.xlsb`. The recipe records
+#'   the copy of that file into the working folder, and `folder` says where.
+#'   The file itself is an input and stays as it is: the copy under
+#'   `setup/source/` keeps its name, and the copy at `setup/setup.xlsm`, or
+#'   `setup/setup.xlsb` for an `.xlsb` file, is what the verbs work on.
 #' * **An `obt` recipe.** It narrows to a setup one, keeping the working
 #'   folder and the setup operations it already holds. The recipe it came
 #'   from is left as it was.
@@ -63,6 +65,7 @@ SETUP_OPERATION_TYPES <- c(
 #' @param overwrite Whether a working setup already in the folder may be
 #'   replaced. With `FALSE`, the default, the run stops when one is there,
 #'   because that file carries whatever the setup verbs have written into it.
+#'   The run also removes a working setup in the other format.
 #'
 #' @return An object of class `obt_setup`.
 #'
@@ -166,7 +169,7 @@ narrow_setup <- function(
 #' Copy the setup into the working folder
 #'
 #' Two copies are made. The one under `setup/source/` keeps the name the user
-#' knows the file by. The one at `setup/setup.xlsb` is what every setup verb
+#' knows the file by. The one at `setup/setup.<ext>` is what every setup verb
 #' works on, so the file the user handed over is never opened by a run.
 #'
 #' @param obtops The recipe.
@@ -183,17 +186,42 @@ run_setup_add <- function(obtops, operation, stage, state) {
   check_file_there(from, what = "the setup it was given")
   check_output_free(paths$setup_file, operation$args$overwrite)
 
-  ensure_folder(paths$setup)
   ensure_folder(paths$setup_source)
 
   kept <- copy_path(obtops, "setup_source", from)
   copy_file(from, kept)
-  copy_file(from, paths$setup_file)
+  setup <- place_working_setup(obtops, from)
 
   list(
-    produced = c(source = kept, setup = paths$setup_file),
-    state = list(setup = paths$setup_file)
+    produced = c(source = kept, setup = setup),
+    state = list(setup = setup)
   )
+}
+
+#' Copy a workbook into place as the working setup
+#'
+#' The copy keeps the extension of the workbook. The function removes a
+#' working setup in the other format, because that is the file being
+#' replaced, and a later run would otherwise find two. The caller checks
+#' first that the user allowed the replacement.
+#'
+#' @param obtops The recipe.
+#' @param from The workbook to copy.
+#' @param call The environment to blame in the error.
+#'
+#' @return The absolute path of the working setup.
+#' @noRd
+place_working_setup <- function(obtops, from, call = rlang::caller_env()) {
+  paths <- obt_paths(obtops)
+  setup <- setup_file_for(obtops, from)
+
+  ensure_folder(paths$setup, call = call)
+  copy_file(from, setup, call = call)
+
+  replaced <- setdiff(setup_file_candidates(paths$folder), setup)
+  unlink(replaced[file.exists(replaced)], force = TRUE)
+
+  setup
 }
 
 #' The setup file every verb of a setup recipe works on
@@ -240,14 +268,15 @@ check_setup_file <- function(
 
   from <- check_string(from, arg = arg, call = call)
 
-  wanted <- paste0(".", SETUP_EXTENSION)
+  wanted <- paste0(".", SETUP_EXTENSIONS)
   exchange <- paste0(".", SETUP_EXCHANGE_EXTENSION)
   extension <- tolower(tools::file_ext(from))
 
   if (identical(extension, SETUP_EXCHANGE_EXTENSION)) {
     cli::cli_abort(
       c(
-        "{.arg {arg}} must be a setup workbook, ending in {.val {wanted}}.",
+        "{.arg {arg}} must be a setup workbook, ending in
+         {.or {.val {wanted}}}.",
         "x" = "{.file {from}} ends in {.val {exchange}}.",
         "i" = "An {.val {exchange}} file carries the content of a setup. The
                workbook carries the code the setup verbs run."
@@ -256,10 +285,11 @@ check_setup_file <- function(
     )
   }
 
-  if (!identical(extension, SETUP_EXTENSION)) {
+  if (!extension %in% SETUP_EXTENSIONS) {
     cli::cli_abort(
       c(
-        "{.arg {arg}} must be a setup workbook, ending in {.val {wanted}}.",
+        "{.arg {arg}} must be a setup workbook, ending in
+         {.or {.val {wanted}}}.",
         "x" = "{.file {from}} ends in {.val {paste0('.', extension)}}."
       ),
       call = call

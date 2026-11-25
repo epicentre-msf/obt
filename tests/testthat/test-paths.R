@@ -3,7 +3,7 @@ test_that("obt_paths answers every entry of the layout", {
 
   expect_named(
     paths,
-    c("folder", names(OBT_FOLDERS), names(OBT_FILES)),
+    c("folder", names(OBT_FOLDERS), "setup_file"),
     ignore.order = FALSE
   )
   expect_true(all(vapply(paths, is.character, logical(1))))
@@ -31,7 +31,42 @@ test_that("the layout is the one the documentation shows", {
   expect_identical(paths$linelist, "/work/linelist")
   expect_identical(paths$export, "/work/export")
   expect_identical(paths$log, "/work/log")
-  expect_identical(paths$setup_file, "/work/setup/setup.xlsb")
+  expect_identical(paths$setup_file, "/work/setup/setup.xlsm")
+})
+
+test_that("obt_paths names the working setup in the format the folder holds", {
+  folder <- withr::local_tempdir()
+  recipe <- obt(folder = folder)
+  ensure_folder(obt_paths(recipe)$setup)
+  writeLines("setup", file.path(folder, "setup", "setup.xlsb"))
+
+  expect_identical(
+    obt_paths(recipe)$setup_file,
+    absolute_path(file.path(folder, "setup", "setup.xlsb"))
+  )
+})
+
+test_that("obt_paths names the .xlsm setup when the folder holds both", {
+  folder <- withr::local_tempdir()
+  recipe <- obt(folder = folder)
+  ensure_folder(obt_paths(recipe)$setup)
+  writeLines("setup", file.path(folder, "setup", "setup.xlsb"))
+  writeLines("setup", file.path(folder, "setup", "setup.xlsm"))
+
+  expect_identical(basename(obt_paths(recipe)$setup_file), "setup.xlsm")
+})
+
+test_that("the working setup keeps the extension of its source", {
+  recipe <- obt(folder = "/work")
+
+  expect_identical(
+    setup_file_for(recipe, "/home/me/old.xlsb"),
+    "/work/setup/setup.xlsb"
+  )
+  expect_identical(
+    setup_file_for(recipe, "/home/me/new.XLSM"),
+    "/work/setup/setup.xlsm"
+  )
 })
 
 test_that("obt_paths refuses anything that is not a recipe", {
@@ -164,7 +199,18 @@ test_that("a linelist is written under linelist, with its extension", {
 
   expect_identical(
     linelist_path(recipe, "measles-2026"),
+    "/work/linelist/measles-2026.xlsm"
+  )
+  expect_identical(
+    linelist_path(recipe, "measles-2026", "xlsb"),
     "/work/linelist/measles-2026.xlsb"
+  )
+})
+
+test_that("a linelist can sit at one path per format, the .xlsm first", {
+  expect_identical(
+    linelist_candidates(obt(folder = "/work"), "measles-2026"),
+    c("/work/linelist/measles-2026.xlsm", "/work/linelist/measles-2026.xlsb")
   )
 })
 

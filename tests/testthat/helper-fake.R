@@ -115,9 +115,9 @@ fake_geobase_file <- function(folder, name = "geobase.xlsx") {
 #
 # The copy is made here and the recipe answered holds no step of its own, so a
 # test can run it as many times as it needs.
-fake_committed_setup <- function(folder) {
+fake_committed_setup <- function(folder, extension = "xlsm") {
   invisible(obt_commit(
-    obt_setup(from = setup_workbook(), folder = folder),
+    obt_setup(from = setup_workbook(extension), folder = folder),
     verbose = FALSE
   ))
 

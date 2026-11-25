@@ -107,17 +107,32 @@ test_that("every workbook of a channel zip is found by its name", {
   files <- channel_files(test_channel_names())
 
   expect_named(files, names(CHANNEL_ROLES), ignore.order = FALSE)
-  expect_identical(files$designer, "designer_main-2.0.0.xlsb")
-  expect_identical(files$setup, "setup_main-2.0.0.xlsb")
-  expect_identical(files$msetup, "msetup_main-2.0.0.xlsb")
-  expect_identical(files$ribbon, "_ribbontemplate_main-2.0.0.xlsb")
+  expect_identical(files$designer, "designer_main-2.0.0.xlsm")
+  expect_identical(files$setup, "setup_main-2.0.0.xlsm")
+  expect_identical(files$msetup, "msetup_main-2.0.0.xlsm")
+  expect_identical(files$ribbon, "_ribbontemplate_main-2.0.0.xlsm")
 })
 
 test_that("the names of the dev channel are read the same way", {
   files <- channel_files(test_channel_names(channel = "dev"))
 
+  expect_identical(files$designer, "designer_dev-2.0.0.xlsm")
+  expect_identical(files$setup, "setup_dev-2.0.0.xlsm")
+})
+
+test_that("an older zip of .xlsb workbooks resolves", {
+  files <- channel_files(test_channel_names(channel = "dev", extension = "xlsb"))
+
   expect_identical(files$designer, "designer_dev-2.0.0.xlsb")
   expect_identical(files$setup, "setup_dev-2.0.0.xlsb")
+  expect_identical(files$msetup, "msetup_dev-2.0.0.xlsb")
+  expect_identical(files$ribbon, "_ribbontemplate_dev-2.0.0.xlsb")
+})
+
+test_that("a zip holding a designer in each format is refused", {
+  names <- c(test_channel_names(), "designer_main-2.0.0.xlsb")
+
+  expect_error(channel_files(names), "2 files for the designer")
 })
 
 test_that("the setup and the master setup are told apart", {
@@ -131,7 +146,7 @@ test_that("a zip with no master setup still resolves", {
   files <- channel_files(names[!startsWith(names, "msetup")])
 
   expect_identical(files$msetup, NA_character_)
-  expect_identical(files$designer, "designer_main-2.0.0.xlsb")
+  expect_identical(files$designer, "designer_main-2.0.0.xlsm")
 })
 
 test_that("a zip with no designer is refused", {
@@ -153,7 +168,7 @@ test_that("a zip with no ribbon template is refused", {
 })
 
 test_that("a zip holding two designers is refused", {
-  names <- c(test_channel_names(), "designer_main-2.1.0.xlsb")
+  names <- c(test_channel_names(), "designer_main-2.1.0.xlsm")
 
   expect_error(channel_files(names), "the designer")
 })
@@ -175,7 +190,7 @@ test_that("a file of another kind is left out", {
 
   expect_identical(
     channel_files(names)$designer,
-    "designer_main-2.0.0.xlsb"
+    "designer_main-2.0.0.xlsm"
   )
 })
 
@@ -186,7 +201,7 @@ test_that("an empty zip is refused and says so", {
 test_that("a workbook stored under a folder keeps its whole entry", {
   files <- channel_files(paste0("OBT-main/", test_channel_names()))
 
-  expect_identical(files$designer, "OBT-main/designer_main-2.0.0.xlsb")
+  expect_identical(files$designer, "OBT-main/designer_main-2.0.0.xlsm")
 })
 
 test_that("the message names the zip when it is given one", {
@@ -233,12 +248,26 @@ test_that("the file names come from the zip", {
 
   result <- designer_fetch(obt(folder = folder), type = "main")
 
-  expect_identical(basename(result$designer), "designer_main-2.0.0.xlsb")
-  expect_identical(basename(result$setup), "setup_main-2.0.0.xlsb")
+  expect_identical(basename(result$designer), "designer_main-2.0.0.xlsm")
+  expect_identical(basename(result$setup), "setup_main-2.0.0.xlsm")
   expect_identical(
     basename(result$ribbon),
-    "_ribbontemplate_main-2.0.0.xlsb"
+    "_ribbontemplate_main-2.0.0.xlsm"
   )
+})
+
+test_that("a dev zip of .xlsb workbooks already downloaded is unzipped", {
+  folder <- withr::local_tempdir()
+  local_mocked_bindings(
+    download_zip = test_downloader(channel_fixture("dev-xlsb"))$download
+  )
+
+  result <- designer_fetch(obt(folder = folder), type = "dev")
+
+  expect_identical(basename(result$designer), "designer_dev-latest.xlsb")
+  expect_identical(basename(result$setup), "setup_dev-latest.xlsb")
+  expect_true(file.exists(result$designer))
+  expect_true(file.exists(result$ribbon))
 })
 
 test_that("everything lands in the folder of its own channel", {

@@ -7,8 +7,8 @@
 obt_setup_languages(path)
 }
 \arguments{
-\item{path}{Path to a setup file. Either an \code{.xlsb} setup or the \code{.xlsx} an
-export of one writes.}
+\item{path}{Path to a setup file. It is an \code{.xlsm} or \code{.xlsb} setup, or the
+\code{.xlsx} that a setup export writes.}
 }
 \value{
 A character vector of language names, in the order the file holds

@@ -9,12 +9,13 @@ obt_setup_convert(obtops, from, overwrite = FALSE)
 \arguments{
 \item{obtops}{An \code{obt} recipe.}
 
-\item{from}{The setup to convert, ending in \code{.xlsb} or \code{.xlsx}. The file
-has to be there when the verb is called.}
+\item{from}{The setup to convert, ending in \code{.xlsm}, \code{.xlsb} or \code{.xlsx}.
+The file has to be there when the verb is called.}
 
 \item{overwrite}{Whether a working setup already in the folder may be
 replaced. With \code{FALSE}, the default, the run stops when one is there,
-because that file carries whatever the setup verbs have written into it.}
+because that file carries whatever the setup verbs have written into it.
+The run also removes a working setup in the other format.}
 }
 \value{
 The recipe, with the steps of the conversion added.
@@ -32,8 +33,10 @@ as it is and is never opened by the run.
 \item Run the old setup's own export on that copy, which writes an \code{.xlsx}
 into \verb{export/}. A file that already ends in \code{.xlsx} is taken as it
 stands, and this step is skipped.
-\item Put a fresh copy of the empty setup at \code{setup/setup.xlsb}, and read the
-\code{.xlsx} into it. That file is what every later operation works on.
+\item Put a fresh copy of the empty setup at \code{setup/setup.xlsm}, and read the
+\code{.xlsx} into it. That file is what every later operation works on. An
+older release carries an \code{.xlsb} empty setup, and the copy is then
+\code{setup/setup.xlsb}.
 }
 
 The \code{.xlsx} stays in \verb{export/} once the run is over, so a user can open it

@@ -1,3 +1,21 @@
+# obt (development version)
+
+* OutbreakTools now ships its designer, setup, master setup and ribbon
+  template as `.xlsm`. `obt_designer_add()` reads a release zip of `.xlsm`
+  workbooks on top of  the older zips of `.xlsb` ones.
+* `obt_setup()` and `obt_setup_convert()` accept `.xlsm` and `.xlsb` setups.
+  The working setup keeps the extension of its source, as `setup/setup.xlsm`
+  or `setup/setup.xlsb`, and `obt_paths()` list whichever one the folder is using. 
+  With `overwrite = TRUE`, the run deletes a working setup in the other
+  format.
+* `obt_setup_languages()` and `obt_fake()` read `.xlsm` setups with readxl.
+* Newer designers write the linelist as `.xlsm`. `obt_designer_generate()`
+  picks up the file in the format listed in the designer summary. 
+  Before the run, it stops if a linelist of that name exists in either format, unless `overwrite = TRUE`.
+* `obt_linelist()` accepts `.xlsm` and `.xlsb` linelists. When `linelist/` folder
+  has both formats, the linelist verbs treat them as one
+  linelist and read the only `.xlsm`.
+
 # obt 0.0.1
 
 First working version. The package builds a recipe of operations and runs it

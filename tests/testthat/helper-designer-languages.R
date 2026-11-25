@@ -6,19 +6,17 @@
 # languages a real file refuses.
 #
 # `folder` is the working folder, usually a `withr::local_tempdir()`.
-setup_in_folder <- function(folder) {
+# `extension` picks which copy of the test setup to use, `"xlsm"` or `"xlsb"`.
+setup_in_folder <- function(folder, extension = "xlsm") {
   source_file <- system.file(
     "extdata",
-    "generic-test-setup.xlsb",
+    paste0("generic-test-setup.", extension),
     package = "obt"
   )
   skip_if(!nzchar(source_file), "fixture not installed: generic-test-setup")
 
   recipe <- obt(folder = folder)
-  paths <- obt_paths(recipe)
-
-  ensure_folder(paths$setup)
-  file.copy(source_file, paths$setup_file, overwrite = TRUE)
+  place_working_setup(recipe, source_file)
 
   recipe
 }

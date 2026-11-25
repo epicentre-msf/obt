@@ -36,18 +36,20 @@ LINELIST_OPERATION_TYPES <- c(
 #'
 #' `from` takes either of two things:
 #'
-#' * **A linelist workbook**, ending in `.xlsb`. The recipe records the copy
-#'   of that file into `linelist/` in the working folder, and `folder` says
-#'   where. The file itself is an input and stays as it is: the copy keeps its
-#'   name and is what the verbs work on.
+#' * **A linelist workbook**, ending in `.xlsm` or `.xlsb`. The recipe records
+#'   the copy of that file into `linelist/` in the working folder, and
+#'   `folder` says where. The file itself is an input and stays as it is: the
+#'   copy keeps its name and is what the verbs work on.
 #' * **An `obt` recipe.** It narrows to a linelist one, keeping the working
 #'   folder and the linelist operations it already holds. The recipe it came
 #'   from is left as it was.
 #'
 #' A recipe narrowed from an `obt` names no linelist of its own. The run reads
 #' the one file under `linelist/` in the working folder, so a linelist built
-#' by an earlier run is picked up. A folder holding more than one is refused,
-#' and naming the file with `from` is what settles it.
+#' by an earlier run is picked up. When `<name>.xlsm` and `<name>.xlsb` both
+#' sit there, the run counts one linelist and reads the `.xlsm`. A folder
+#' holding more than one is refused, and naming the file with `from` is what
+#' settles it.
 #'
 #' A linelist built with a password opens with that password, and every verb
 #' of the recipe opens the file. Give the password with the workbook, and the
@@ -78,7 +80,7 @@ LINELIST_OPERATION_TYPES <- c(
 #' @export
 #'
 #' @examples
-#' linelist <- file.path(tempdir(), "measles-2026.xlsb")
+#' linelist <- file.path(tempdir(), "measles-2026.xlsm")
 #' invisible(file.create(linelist))
 #'
 #' obt_linelist(from = linelist, folder = file.path(tempdir(), "measles"))
@@ -241,15 +243,17 @@ check_linelist_file <- function(
 
   from <- check_string(from, arg = arg, call = call)
 
-  wanted <- paste0(".", LINELIST_EXTENSION)
+  wanted <- paste0(".", LINELIST_EXTENSIONS)
   extension <- tolower(tools::file_ext(from))
 
-  if (!identical(extension, LINELIST_EXTENSION)) {
+  if (!extension %in% LINELIST_EXTENSIONS) {
     cli::cli_abort(
       c(
-        "{.arg {arg}} must be a linelist workbook, ending in {.val {wanted}}.",
+        "{.arg {arg}} must be a linelist workbook, ending in
+         {.or {.val {wanted}}}.",
         "x" = "{.file {from}} ends in {.val {paste0('.', extension)}}.",
-        "i" = "The designer writes a linelist as an {.val {wanted}} file."
+        "i" = "The designer writes a linelist as an {.val {wanted[[1]]}}
+               file. An older designer writes an {.val {wanted[[2]]}} file."
       ),
       call = call
     )

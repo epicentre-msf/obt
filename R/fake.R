@@ -239,7 +239,7 @@ read_setup_tables <- function(path, call = rlang::caller_env()) {
 #' @noRd
 read_setup_sheet <- function(path, sheet, call = rlang::caller_env()) {
   read <- tryCatch(
-    readxlsb::read_xlsb(
+    read_workbook_sheet(
       path,
       sheet = sheet,
       skip = unname(FAKE_SHEET_SKIP[[sheet]])
@@ -264,6 +264,33 @@ read_setup_sheet <- function(path, sheet, call = rlang::caller_env()) {
   }
 
   read
+}
+
+#' Read one sheet of a setup workbook
+#'
+#' readxlsb reads only `.xlsb` files. An `.xlsm` file is an `.xlsx` file with
+#' macros, so readxl reads it.
+#'
+#' @param path Path to the setup workbook.
+#' @param sheet The sheet to read.
+#' @param skip The rows above the header.
+#'
+#' @return A data frame.
+#' @noRd
+read_workbook_sheet <- function(path, sheet, skip) {
+  if (identical(tolower(tools::file_ext(path)), "xlsb")) {
+    return(readxlsb::read_xlsb(path, sheet = sheet, skip = skip))
+  }
+
+  read <- readxl::read_excel(
+    path,
+    sheet = sheet,
+    skip = skip,
+    col_types = "text",
+    .name_repair = "minimal"
+  )
+
+  as.data.frame(read)
 }
 
 #' Write a setup's own column headers the way this package reads them

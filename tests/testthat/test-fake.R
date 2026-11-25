@@ -144,6 +144,25 @@ test_that("the run writes one sheet per worksheet of the setup", {
   )
 })
 
+test_that("an .xlsb setup and its .xlsm copy make the same records", {
+  skip_if_no_run()
+
+  made <- lapply(c("xlsm", "xlsb"), function(extension) {
+    folder <- withr::local_tempdir()
+
+    invisible(obt_commit(
+      fake_committed_setup(folder, extension) |> obt_fake(n = 5, seed = 7),
+      verbose = FALSE
+    ))
+
+    path <- file.path(folder, "export", "fake.xlsx")
+    sheets <- readxl::excel_sheets(path)
+    stats::setNames(lapply(sheets, fake_read_back, path = path), sheets)
+  })
+
+  expect_identical(made[[1]], made[[2]])
+})
+
 test_that("a horizontal worksheet holds one record a row", {
   skip_if_no_run()
 

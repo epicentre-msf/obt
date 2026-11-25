@@ -37,8 +37,8 @@ This opens Excel, so it takes macOS or Windows.
 }
 \examples{
 \dontrun{
-obt_silent_set("~/measles/linelist/measles-2026.xlsb", "Yes")
-obt_silent_set("~/measles/linelist/measles-2026.xlsb", "Yes", password = "pw")
+obt_silent_set("~/measles/linelist/measles-2026.xlsm", "Yes")
+obt_silent_set("~/measles/linelist/measles-2026.xlsm", "Yes", password = "pw")
 }
 }
 \seealso{

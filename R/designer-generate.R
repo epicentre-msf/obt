@@ -9,16 +9,17 @@
 # systems, so a name that works on one has to work on the other.
 FORBIDDEN_NAME_CHARS <- "[\\\\/:*?\"<>|]"
 
-# Extensions a linelist is written with. A name that already carries one was
+# The extensions a workbook carries. A name that already carries one was
 # meant as a file name, and would come out doubled.
-LINELIST_EXTENSIONS <- c("xlsb", "xlsx", "xlsm")
+NAME_EXTENSIONS <- c("xlsm", "xlsb", "xlsx")
 
 #' Generate the linelist
 #'
 #' @description
 #' Records the generation run. At commit time the designer's `Main` sheet is
 #' filled from the recipe and the linelist is built under `linelist/` in the
-#' working folder, as `<name>.xlsb`.
+#' working folder, as `<name>.xlsm`. An older designer builds `<name>.xlsb`,
+#' and the run accepts that file too.
 #'
 #' A linelist can be built with two passwords, and the designer takes both
 #' off its `Main` sheet. `password` is what the file opens with, and every
@@ -34,7 +35,8 @@ LINELIST_EXTENSIONS <- c("xlsb", "xlsx", "xlsm")
 #' @param obtops An `obt` recipe.
 #' @param name The file name of the linelist, without an extension.
 #' @param overwrite Whether a linelist of that name may be replaced. With
-#'   `FALSE`, the default, the run stops when the file is already there.
+#'   `FALSE`, the default, the run stops when `<name>.xlsm` or `<name>.xlsb`
+#'   is already there.
 #' @param password The password the linelist opens with. Left out, the
 #'   default, the linelist opens with none.
 #' @param debug_password The password the sheets and the structure of the
@@ -110,7 +112,7 @@ check_linelist_name <- function(
 
   extension <- tolower(tools::file_ext(name))
 
-  if (extension %in% LINELIST_EXTENSIONS) {
+  if (extension %in% NAME_EXTENSIONS) {
     bare <- tools::file_path_sans_ext(name)
     cli::cli_abort(
       c(

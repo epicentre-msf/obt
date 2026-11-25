@@ -289,6 +289,33 @@ test_that("a folder holding two linelists stops the run and names both", {
   expect_error(linelist_target(recipe, list()), "measles-2025")
 })
 
+test_that("an .xlsb linelist in the folder is read into", {
+  folder <- withr::local_tempdir()
+  recipe <- linelist_recipe(folder)
+  linelist <- built_linelist(folder, extension = "xlsb")
+
+  expect_identical(linelist_target(recipe, list()), linelist)
+})
+
+test_that("a linelist and its .xlsb copy count as one, and the .xlsm is read", {
+  folder <- withr::local_tempdir()
+  recipe <- linelist_recipe(folder)
+  linelist <- built_linelist(folder, extension = "xlsm")
+  built_linelist(folder, extension = "xlsb")
+
+  expect_identical(linelist_target(recipe, list()), linelist)
+})
+
+test_that("two linelists in two formats are still two", {
+  folder <- withr::local_tempdir()
+  recipe <- linelist_recipe(folder)
+  built_linelist(folder, "measles-2026", extension = "xlsm")
+  built_linelist(folder, "measles-2025", extension = "xlsb")
+
+  expect_error(linelist_target(recipe, list()), "2 linelists")
+  expect_error(linelist_target(recipe, list()), "measles-2025.xlsb")
+})
+
 test_that("a file in linelist/ that is no workbook is left out", {
   folder <- withr::local_tempdir()
   recipe <- linelist_recipe(folder)

@@ -12,6 +12,13 @@
 # holds a whole setup, so a reader is proved against a workbook the designer
 # itself is tested with.
 #
+# inst/extdata/generic-test-setup.xlsm holds the same workbook saved as
+# .xlsm. OutbreakTools ships its setups in that format, and the package reads
+# it with readxl. To make it, open the .xlsb in Excel with AutomationSecurity
+# set to 3 (force-disable), so none of the workbook's code runs, then SaveAs
+# with FileFormat 52. Redo it each time the .xlsb is refreshed. The tests
+# check that both files give the same languages and the same fake records.
+#
 # Run with: Rscript data-raw/make-setup-fixtures.R
 
 library(writexl)

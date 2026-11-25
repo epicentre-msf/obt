@@ -58,8 +58,8 @@ QUIET_ANSWER_LEAD <- "obt-quiet-"
 #'
 #' @examples
 #' \dontrun{
-#' obt_silent_get("~/measles/linelist/measles-2026.xlsb")
-#' obt_silent_get("~/measles/linelist/measles-2026.xlsb", password = "pw")
+#' obt_silent_get("~/measles/linelist/measles-2026.xlsm")
+#' obt_silent_get("~/measles/linelist/measles-2026.xlsm", password = "pw")
 #' }
 obt_silent_get <- function(path, password = NULL) {
   path <- check_workbook_path(path)
@@ -101,8 +101,8 @@ obt_silent_get <- function(path, password = NULL) {
 #'
 #' @examples
 #' \dontrun{
-#' obt_silent_set("~/measles/linelist/measles-2026.xlsb", "Yes")
-#' obt_silent_set("~/measles/linelist/measles-2026.xlsb", "Yes", password = "pw")
+#' obt_silent_set("~/measles/linelist/measles-2026.xlsm", "Yes")
+#' obt_silent_set("~/measles/linelist/measles-2026.xlsm", "Yes", password = "pw")
 #' }
 obt_silent_set <- function(path, value = SILENT_ON, password = NULL) {
   path <- check_workbook_path(path)

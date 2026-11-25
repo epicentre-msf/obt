@@ -24,7 +24,9 @@ verbs chain with `|>`. Nothing reaches the disk while a recipe is built.
 pak::pak("epicentre-msf/obt")
 ```
 
-`obt` reads closed `.xlsb` workbooks through
+OutbreakTools ships its workbooks as `.xlsm`. Setups built before that are
+`.xlsb`, and `obt` works with both. It reads a closed `.xlsm` or `.xlsx`
+workbook with readxl and a closed `.xlsb` with
 [readxlsb](https://github.com/velofrog/readxlsb).
 
 Opening Excel needs **macOS or Windows**, with Microsoft Excel

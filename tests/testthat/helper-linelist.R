@@ -12,11 +12,11 @@ migration_file <- function(folder, name = "cases-from-the-field.xlsx") {
 }
 
 # A working folder holding one linelist, the way a generation run leaves it.
-built_linelist <- function(folder, name = "measles-2026") {
+built_linelist <- function(folder, name = "measles-2026", extension = "xlsm") {
   paths <- obt_paths(obt(folder = folder))
 
   ensure_folder(paths$linelist)
-  path <- file.path(paths$linelist, paste0(name, ".", LINELIST_EXTENSION))
+  path <- file.path(paths$linelist, paste0(name, ".", extension))
   writeLines("linelist", path)
 
   path

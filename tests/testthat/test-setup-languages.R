@@ -45,7 +45,7 @@ test_that("an unsupported extension is refused", {
   path <- withr::local_tempfile(fileext = ".csv")
   writeLines("a,b", path)
 
-  expect_error(obt_setup_languages(path), "xlsb")
+  expect_error(obt_setup_languages(path), "xlsm.*xlsb.*xlsx")
 })
 
 test_that("path must be a single string", {
@@ -58,6 +58,20 @@ test_that("an .xlsb setup answers its languages", {
   expect_identical(
     obt_setup_languages(fixture("generic-test-setup.xlsb")),
     c("English", "Français", "Espanol", "Portugues", "Arabic")
+  )
+})
+
+test_that("an .xlsm setup answers its languages", {
+  expect_identical(
+    obt_setup_languages(fixture("generic-test-setup.xlsm")),
+    c("English", "Français", "Espanol", "Portugues", "Arabic")
+  )
+})
+
+test_that("an .xlsm setup and its .xlsb twin answer the same languages", {
+  expect_identical(
+    obt_setup_languages(fixture("generic-test-setup.xlsm")),
+    obt_setup_languages(fixture("generic-test-setup.xlsb"))
   )
 })
 

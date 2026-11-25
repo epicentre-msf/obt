@@ -41,8 +41,10 @@ SETUP_EXPORT_KEY <- "export"
 #' 2. Run the old setup's own export on that copy, which writes an `.xlsx`
 #'    into `export/`. A file that already ends in `.xlsx` is taken as it
 #'    stands, and this step is skipped.
-#' 3. Put a fresh copy of the empty setup at `setup/setup.xlsb`, and read the
-#'    `.xlsx` into it. That file is what every later operation works on.
+#' 3. Put a fresh copy of the empty setup at `setup/setup.xlsm`, and read the
+#'    `.xlsx` into it. That file is what every later operation works on. An
+#'    older release carries an `.xlsb` empty setup, and the copy is then
+#'    `setup/setup.xlsb`.
 #'
 #' The `.xlsx` stays in `export/` once the run is over, so a user can open it
 #' and read what came across.
@@ -55,11 +57,12 @@ SETUP_EXPORT_KEY <- "export"
 #' until [obt_commit()] runs.
 #'
 #' @param obtops An `obt` recipe.
-#' @param from The setup to convert, ending in `.xlsb` or `.xlsx`. The file
-#'   has to be there when the verb is called.
+#' @param from The setup to convert, ending in `.xlsm`, `.xlsb` or `.xlsx`.
+#'   The file has to be there when the verb is called.
 #' @param overwrite Whether a working setup already in the folder may be
 #'   replaced. With `FALSE`, the default, the run stops when one is there,
 #'   because that file carries whatever the setup verbs have written into it.
+#'   The run also removes a working setup in the other format.
 #'
 #' @return The recipe, with the steps of the conversion added.
 #'
@@ -164,7 +167,7 @@ run_convert_export <- function(obtops, operation, stage, state) {
 
 #' Read the `.xlsx` into a fresh copy of the empty setup
 #'
-#' The empty setup is copied over `setup/setup.xlsb` first, so the import
+#' The run first copies the empty setup over the working setup, so the import
 #' fills a file carrying the version the downloaded designer reads. An import
 #' that fails leaves that fresh copy behind, and a second run of the same
 #' recipe puts a fresh one back over it.
@@ -184,14 +187,13 @@ run_convert_import <- function(obtops, operation, stage, state) {
   check_file_there(from, what = "the file to read into the new setup")
   check_output_free(paths$setup_file, operation$args$overwrite)
 
-  ensure_folder(paths$setup)
-  copy_file(template, paths$setup_file)
+  setup <- place_working_setup(obtops, template)
 
-  driver_setup_import(setup = paths$setup_file, from = from)
+  driver_setup_import(setup = setup, from = from)
 
   list(
-    produced = c(setup = paths$setup_file),
-    state = list(setup = paths$setup_file)
+    produced = c(setup = setup),
+    state = list(setup = setup)
   )
 }
 
@@ -359,8 +361,8 @@ check_designer_recorded <- function(obtops, call = rlang::caller_env()) {
 
 #' Check the file a conversion was given
 #'
-#' Both extensions are taken. An `.xlsb` goes through the export step first;
-#' an `.xlsx` is read into the new setup as it stands.
+#' A setup workbook goes through the export step first. The run reads an
+#' `.xlsx` into the new setup as it stands.
 #'
 #' @param from The value to check.
 #' @param arg The name of the argument it came from.
@@ -377,17 +379,17 @@ check_convert_file <- function(
 
   from <- check_string(from, arg = arg, call = call)
 
-  workbook <- paste0(".", SETUP_EXTENSION)
+  workbook <- paste0(".", SETUP_EXTENSIONS)
   exchange <- paste0(".", SETUP_EXCHANGE_EXTENSION)
   extension <- tolower(tools::file_ext(from))
 
-  if (!extension %in% c(SETUP_EXTENSION, SETUP_EXCHANGE_EXTENSION)) {
+  if (!extension %in% c(SETUP_EXTENSIONS, SETUP_EXCHANGE_EXTENSION)) {
     cli::cli_abort(
       c(
-        "{.arg {arg}} must end in {.val {workbook}} or {.val {exchange}}.",
+        "{.arg {arg}} must end in {.or {.val {c(workbook, exchange)}}}.",
         "x" = "{.file {from}} ends in {.val {paste0('.', extension)}}.",
-        "i" = "A {.val {workbook}} is a setup workbook. An {.val {exchange}}
-               is the file a setup writes its content into."
+        "i" = "An {.or {.val {workbook}}} is a setup workbook. An
+               {.val {exchange}} is the file a setup writes its content into."
       ),
       call = call
     )

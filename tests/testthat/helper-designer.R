@@ -2,9 +2,10 @@
 # under the tests and never ship with the package: a channel is downloaded,
 # and a carried copy would go stale the day the release build changes a name.
 #
-#   main     a stable release, four workbooks, a version
-#   dev      the development build, four workbooks, "latest"
-#   legacy   the shape the stable channel shipped in 2024
+#   main      a stable release, four .xlsm workbooks, a version
+#   dev       the development build, four .xlsm workbooks, "latest"
+#   dev-xlsb  the development build as it shipped before the switch to .xlsm
+#   legacy    the shape the stable channel shipped in 2024
 channel_fixture <- function(shape = "main") {
   name <- paste0("obt-channel-", shape, ".zip")
   path <- test_path("fixtures", name)
@@ -31,13 +32,18 @@ test_downloader <- function(zip) {
 }
 
 # The names a release build writes into a channel zip.
-test_channel_names <- function(channel = "main", version = "2.0.0") {
+test_channel_names <- function(
+  channel = "main",
+  version = "2.0.0",
+  extension = "xlsm"
+) {
   paste0(
     c("designer_", "setup_", "msetup_", "_ribbontemplate_"),
     channel,
     "-",
     version,
-    ".xlsb"
+    ".",
+    extension
   )
 }
 

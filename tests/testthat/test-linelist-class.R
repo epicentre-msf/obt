@@ -19,7 +19,7 @@ test_that("the recipe records the linelist it was given", {
 
   expect_length(recipe$operations, 1)
   expect_identical(operation$type, "linelist-add")
-  expect_identical(operation$args$from, "linelist/measles-2026.xlsb")
+  expect_identical(operation$args$from, "linelist/measles-2026.xlsm")
   expect_false(operation$args$overwrite)
   expect_null(operation$args$password)
   expect_false(operation$waiting)
@@ -48,8 +48,18 @@ test_that("any other extension is refused", {
   folder <- withr::local_tempdir()
   path <- empty_file(folder, "measles-2026.xlsx")
 
-  expect_error(obt_linelist(from = path, folder = folder), "\\.xlsb")
+  expect_error(obt_linelist(from = path, folder = folder), "\\.xlsm.*\\.xlsb")
   expect_error(obt_linelist(from = path, folder = folder), "linelist workbook")
+})
+
+test_that("an .xlsm and an .xlsb linelist are both taken at the verb", {
+  folder <- withr::local_tempdir()
+
+  for (extension in c("xlsm", "xlsb")) {
+    linelist <- built_linelist(folder, extension = extension)
+
+    expect_true(is_obt_linelist(obt_linelist(from = linelist, folder = folder)))
+  }
 })
 
 test_that("a linelist workbook with no folder is refused", {
@@ -248,7 +258,7 @@ test_that("a linelist already in the folder is refused without overwrite", {
   folder <- withr::local_tempdir()
   elsewhere <- withr::local_tempdir()
   from <- empty_file(elsewhere, "measles-2026.xlsb")
-  built_linelist(folder)
+  built_linelist(folder, extension = "xlsb")
 
   recipe <- obt_linelist(from = from, folder = folder)
 
@@ -330,7 +340,7 @@ test_that("the description shows the linelist rows", {
   )
 
   expect_match(said, "Linelist")
-  expect_match(said, "measles-2026.xlsb")
+  expect_match(said, "measles-2026.xlsm")
   expect_match(said, "Read in from")
   expect_match(said, "cases-from-the-field.xlsx")
 })

@@ -1,11 +1,13 @@
 # The setup workbook the sources carry, as a file a verb can be given.
 #
 # It is the OutbreakTools test setup, so the file a verb accepts here is the
-# shape of the file a user hands over.
-setup_workbook <- function() {
+# shape of the file a user hands over. The package carries it as `.xlsm`, the
+# format OutbreakTools ships today, and as `.xlsb`, the format of every older
+# setup.
+setup_workbook <- function(extension = "xlsm") {
   path <- system.file(
     "extdata",
-    "generic-test-setup.xlsb",
+    paste0("generic-test-setup.", extension),
     package = "obt"
   )
   skip_if(!nzchar(path), "fixture not installed: generic-test-setup")
@@ -13,8 +15,8 @@ setup_workbook <- function() {
 }
 
 # A setup recipe on a folder the test owns.
-setup_recipe <- function(folder, ...) {
-  obt_setup(from = setup_workbook(), folder = folder, ...)
+setup_recipe <- function(folder, ..., extension = "xlsm") {
+  obt_setup(from = setup_workbook(extension), folder = folder, ...)
 }
 
 # An empty file under a name the setup verbs accept. What it holds is never

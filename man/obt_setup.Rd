@@ -14,7 +14,8 @@ a setup workbook. A narrowed recipe carries the folder it came with.}
 
 \item{overwrite}{Whether a working setup already in the folder may be
 replaced. With \code{FALSE}, the default, the run stops when one is there,
-because that file carries whatever the setup verbs have written into it.}
+because that file carries whatever the setup verbs have written into it.
+The run also removes a working setup in the other format.}
 }
 \value{
 An object of class \code{obt_setup}.
@@ -27,11 +28,11 @@ class.
 
 \code{from} takes either of two things:
 \itemize{
-\item \strong{A setup workbook}, ending in \code{.xlsb}. The recipe records the copy of
-that file into the working folder, and \code{folder} says where. The file
-itself is an input and stays as it is: the copy under \verb{setup/source/}
-keeps its name, and the copy at \code{setup/setup.xlsb} is what the verbs
-work on.
+\item \strong{A setup workbook}, ending in \code{.xlsm} or \code{.xlsb}. The recipe records
+the copy of that file into the working folder, and \code{folder} says where.
+The file itself is an input and stays as it is: the copy under
+\verb{setup/source/} keeps its name, and the copy at \code{setup/setup.xlsm}, or
+\code{setup/setup.xlsb} for an \code{.xlsb} file, is what the verbs work on.
 \item \strong{An \code{obt} recipe.} It narrows to a setup one, keeping the working
 folder and the setup operations it already holds. The recipe it came
 from is left as it was.

@@ -378,7 +378,7 @@ test_that("the import fills a fresh copy of the empty setup", {
   recipe <- convert_recipe(folder) |> obt_setup_convert(from = old)
 
   paths <- obt_paths(recipe)
-  template <- empty_file(paths$obt_dev, "setup_dev-2.0.0.xlsb")
+  template <- empty_file(paths$obt_dev, "setup_dev-2.0.0.xlsm")
   writeLines("the empty setup", template)
   written <- empty_file(paths$export, "old-setup.xlsx")
   seen <- NULL
@@ -410,7 +410,7 @@ test_that("a working setup already there stops the import", {
   recipe <- convert_recipe(folder) |> obt_setup_convert(from = old)
 
   paths <- obt_paths(recipe)
-  template <- empty_file(paths$obt_dev, "setup_dev-2.0.0.xlsb")
+  template <- empty_file(paths$obt_dev, "setup_dev-2.0.0.xlsm")
   written <- empty_file(paths$export, "old-setup.xlsx")
   ensure_folder(paths$setup)
   writeLines("the setup already there", paths$setup_file)
@@ -434,7 +434,7 @@ test_that("overwrite lets the import put a fresh copy over it", {
     obt_setup_convert(from = old, overwrite = TRUE)
 
   paths <- obt_paths(recipe)
-  template <- empty_file(paths$obt_dev, "setup_dev-2.0.0.xlsb")
+  template <- empty_file(paths$obt_dev, "setup_dev-2.0.0.xlsm")
   writeLines("the empty setup", template)
   written <- empty_file(paths$export, "old-setup.xlsx")
   ensure_folder(paths$setup)
@@ -454,6 +454,51 @@ test_that("overwrite lets the import put a fresh copy over it", {
   )
 
   expect_identical(readLines(paths$setup_file), "the empty setup")
+})
+
+test_that("an .xlsb empty setup from an older release makes an .xlsb one", {
+  folder <- withr::local_tempdir()
+  old <- old_setup(folder)
+  recipe <- convert_recipe(folder) |>
+    obt_setup_convert(from = old, overwrite = TRUE)
+
+  paths <- obt_paths(recipe)
+  template <- empty_file(paths$obt_dev, "setup_dev-latest.xlsb")
+  writeLines("the empty setup", template)
+  written <- empty_file(paths$export, "old-setup.xlsx")
+  ensure_folder(paths$setup)
+  writeLines("the setup already there", paths$setup_file)
+  seen <- NULL
+
+  local_mocked_bindings(
+    driver_setup_import = function(setup, from, ...) {
+      seen <<- setup
+      list(produced = character(), state = list())
+    }
+  )
+
+  answer <- run_convert_import(
+    recipe,
+    operation_at(recipe, 4),
+    NULL,
+    list(converted = written, empty_setup = template)
+  )
+
+  expect_identical(basename(seen), "setup.xlsb")
+  expect_identical(answer$state$setup, obt_paths(recipe)$setup_file)
+  expect_identical(list.files(paths$setup, "^setup\\."), "setup.xlsb")
+})
+
+test_that("an .xlsm setup is converted through its own export", {
+  folder <- withr::local_tempdir()
+  old <- old_setup(folder, name = "old-setup.xlsm")
+
+  recipe <- convert_recipe(folder) |> obt_setup_convert(from = old)
+
+  expect_identical(
+    vapply(recipe$operations, function(op) op$type, character(1)),
+    c("designer-add", "convert-add", "convert-export", "convert-import")
+  )
 })
 
 test_that("the import stops when the run holds no empty setup", {

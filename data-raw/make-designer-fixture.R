@@ -5,13 +5,16 @@
 # at: the file names, flat, with no folder above them. Every name carries the
 # channel and the version of the build, the way a release writes it.
 #
-# Three shapes are kept, because the two channels ship different ones:
+# The script keeps four shapes, because the two channels ship different ones:
 #
-#   obt-channel-main.zip     a stable release, four workbooks, a version
-#   obt-channel-dev.zip      the development build, four workbooks, "latest"
-#   obt-channel-legacy.zip   the shape the stable channel shipped in 2024:
-#                            three workbooks, the setup named with no channel,
-#                            and two helper scripts beside them
+#   obt-channel-main.zip      a stable release, four .xlsm workbooks, a version
+#   obt-channel-dev.zip       the development build, four .xlsm workbooks,
+#                             "latest"
+#   obt-channel-dev-xlsb.zip  the development build as it shipped before the
+#                             switch to .xlsm: the same names, ending in .xlsb
+#   obt-channel-legacy.zip    the shape the stable channel shipped in 2024:
+#                             three .xlsb workbooks, the setup named with no
+#                             channel, and two helper scripts beside them
 #
 # The files inside are one line of text each. Nothing in the tests opens them.
 #
@@ -24,19 +27,21 @@
 fixtures_folder <- file.path("tests", "testthat", "fixtures")
 dir.create(fixtures_folder, recursive = TRUE, showWarnings = FALSE)
 
-release_names <- function(channel, version) {
+release_names <- function(channel, version, extension = "xlsm") {
   paste0(
     c("designer_", "setup_", "msetup_", "_ribbontemplate_"),
     channel,
     "-",
     version,
-    ".xlsb"
+    ".",
+    extension
   )
 }
 
 fixtures <- list(
   "obt-channel-main.zip" = release_names("main", "2.0.0"),
   "obt-channel-dev.zip" = release_names("dev", "latest"),
+  "obt-channel-dev-xlsb.zip" = release_names("dev", "latest", "xlsb"),
   "obt-channel-legacy.zip" = c(
     "setup-2024-10-19.xlsb",
     "designer_main-2024-10-19.xlsb",

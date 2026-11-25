@@ -79,7 +79,7 @@ test_that("the second linelist and its password are recorded together", {
     obt_linelist_export(other = other, password = "hunter2")
   operation <- recipe$operations[[1]]
 
-  expect_identical(operation$args$other, "linelist/measles-2025.xlsb")
+  expect_identical(operation$args$other, "linelist/measles-2025.xlsm")
   expect_identical(operation$args$password, "hunter2")
 })
 
@@ -143,7 +143,7 @@ test_that("the three migration exports take a second linelist", {
 
     expect_identical(
       recipe$operations[[1]]$args$other,
-      "linelist/measles-2025.xlsb"
+      "linelist/measles-2025.xlsm"
     )
   }
 })
@@ -351,7 +351,7 @@ test_that("the second linelist and its password cross as recorded", {
         type = "migration",
         name = NULL,
         to = "export",
-        other = "linelist/measles-2025.xlsb",
+        other = "linelist/measles-2025.xlsm",
         password = "pw"
       )
     ),

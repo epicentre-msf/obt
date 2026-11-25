@@ -57,8 +57,10 @@ CHANNEL_ROLES <- list(
   )
 )
 
-# The extension every workbook of a channel zip carries.
-CHANNEL_EXTENSION <- "xlsb"
+# The extensions a workbook of a channel zip carries. Releases ship .xlsm
+# workbooks. Older zips hold .xlsb ones, and the run reuses a zip it
+# downloaded earlier, so it accepts both.
+CHANNEL_EXTENSIONS <- c("xlsm", "xlsb")
 
 # The oldest release this package can drive. A release below it carries no
 # entry point a script can call, so a run against one would sit on a message
@@ -348,7 +350,7 @@ zip_entries <- function(zip, call = rlang::caller_env()) {
 #' @noRd
 channel_files <- function(entries, zip = NULL, call = rlang::caller_env()) {
   workbooks <- entries[
-    tolower(tools::file_ext(basename(entries))) == CHANNEL_EXTENSION
+    tolower(tools::file_ext(basename(entries))) %in% CHANNEL_EXTENSIONS
   ]
   named <- basename(workbooks)
   from <- if (is.null(zip)) "The zip" else "{.file {zip}}"

@@ -5,7 +5,8 @@
 # is the one place a path is built, so a recipe can store its paths relative to
 # the folder and the folder can be moved.
 #
-# The package creates a folder when it needs it and removes nothing.
+# The package creates a folder when it needs it. It removes a file only when
+# the user told it to replace the working setup.
 
 # The folders of the layout, as paths relative to the working folder.
 OBT_FOLDERS <- c(
@@ -20,12 +21,18 @@ OBT_FOLDERS <- c(
   log = "log"
 )
 
-# The files the layout names. The working setup is the empty template from the
-# zip with the user's imports written on top of it.
-OBT_FILES <- c(setup_file = "setup/setup.xlsb")
+# The working setup, without its extension. The working setup is the empty
+# template from the zip with the user's imports written on top of it, or a
+# copy of the setup the user handed over. Excel on macOS refuses a workbook
+# whose extension does not match its format, so the copy keeps the extension
+# of its source.
+SETUP_FILE_STEM <- "setup/setup"
 
-# The extension a generated linelist carries.
-LINELIST_EXTENSION <- "xlsb"
+# The extensions a generated linelist carries. The designer saves the
+# linelist as .xlsm. An older designer saves it as .xlsb, and the designer's
+# "add .xlsb" box writes an extra .xlsb copy. The run assumes the first
+# format when neither the disk nor the summary names one.
+LINELIST_EXTENSIONS <- c("xlsm", "xlsb")
 
 # The extension a run log carries.
 LOG_EXTENSION <- "txt"
@@ -62,6 +69,10 @@ SUMMARY_SUFFIX <- "-obt-summary.txt"
 #' Reading the paths creates nothing. A folder is created when the run that
 #' needs it starts.
 #'
+#' The working setup keeps the extension of its source, so it sits at
+#' `setup/setup.xlsm` or `setup/setup.xlsb`. `setup_file` names the one the
+#' folder holds, or `setup/setup.xlsm` when the folder holds none.
+#'
 #' @param obtops An `obt` recipe.
 #'
 #' @return A named list of absolute paths: `folder`, one entry per folder of
@@ -77,12 +88,58 @@ obt_paths <- function(obtops) {
   check_obt(obtops)
 
   folder <- absolute_path(obtops$folder)
-  entries <- c(OBT_FOLDERS, OBT_FILES)
 
-  resolved <- as.list(file.path(folder, entries))
-  names(resolved) <- names(entries)
+  resolved <- as.list(file.path(folder, OBT_FOLDERS))
+  names(resolved) <- names(OBT_FOLDERS)
 
-  c(list(folder = folder), resolved)
+  c(list(folder = folder), resolved, list(setup_file = setup_file_in(folder)))
+}
+
+#' The paths the working setup can sit at, one per setup format
+#'
+#' @param folder The working folder, absolute.
+#'
+#' @return Absolute paths, in the order of `SETUP_EXTENSIONS`.
+#' @noRd
+setup_file_candidates <- function(folder) {
+  file.path(folder, paste0(SETUP_FILE_STEM, ".", SETUP_EXTENSIONS))
+}
+
+#' The working setup a folder holds
+#'
+#' A run that writes the working setup removes the one in the other format,
+#' so the folder holds one at most. A user who copies files in by hand can
+#' leave both, and the function then answers the first format of
+#' `SETUP_EXTENSIONS`.
+#'
+#' @param folder The working folder, absolute.
+#'
+#' @return An absolute path. With no setup on disk, the path in the first
+#'   format.
+#' @noRd
+setup_file_in <- function(folder) {
+  candidates <- setup_file_candidates(folder)
+  found <- candidates[file.exists(candidates)]
+
+  if (length(found) == 0) {
+    return(candidates[[1]])
+  }
+
+  found[[1]]
+}
+
+#' The path of the working setup copied from one workbook
+#'
+#' @param obtops The recipe.
+#' @param from The workbook the copy is made from.
+#'
+#' @return An absolute path.
+#' @noRd
+setup_file_for <- function(obtops, from) {
+  file.path(
+    obt_paths(obtops)$folder,
+    paste0(SETUP_FILE_STEM, ".", tolower(tools::file_ext(from)))
+  )
 }
 
 #' Build the whole layout under the working folder
@@ -184,13 +241,31 @@ check_output_free <- function(
 #'
 #' @param obtops The recipe.
 #' @param name The name the linelist was recorded under.
+#' @param extension The format of the file.
 #'
 #' @return An absolute path.
 #' @noRd
-linelist_path <- function(obtops, name) {
-  file.path(
-    obt_paths(obtops)$linelist,
-    paste0(name, ".", LINELIST_EXTENSION)
+linelist_path <- function(
+  obtops,
+  name,
+  extension = LINELIST_EXTENSIONS[[1]]
+) {
+  file.path(obt_paths(obtops)$linelist, paste0(name, ".", extension))
+}
+
+#' The paths a generated linelist can sit at, one per format
+#'
+#' @param obtops The recipe.
+#' @param name The name the linelist was recorded under.
+#'
+#' @return Absolute paths, in the order of `LINELIST_EXTENSIONS`.
+#' @noRd
+linelist_candidates <- function(obtops, name) {
+  vapply(
+    LINELIST_EXTENSIONS,
+    function(extension) linelist_path(obtops, name, extension),
+    character(1),
+    USE.NAMES = FALSE
   )
 }
 

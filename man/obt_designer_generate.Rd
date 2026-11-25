@@ -18,7 +18,8 @@ obt_designer_generate(
 \item{name}{The file name of the linelist, without an extension.}
 
 \item{overwrite}{Whether a linelist of that name may be replaced. With
-\code{FALSE}, the default, the run stops when the file is already there.}
+\code{FALSE}, the default, the run stops when \verb{<name>.xlsm} or \verb{<name>.xlsb}
+is already there.}
 
 \item{password}{The password the linelist opens with. Left out, the
 default, the linelist opens with none.}
@@ -33,7 +34,8 @@ The recipe, with the generation operation added.
 \description{
 Records the generation run. At commit time the designer's \code{Main} sheet is
 filled from the recipe and the linelist is built under \verb{linelist/} in the
-working folder, as \verb{<name>.xlsb}.
+working folder, as \verb{<name>.xlsm}. An older designer builds \verb{<name>.xlsb},
+and the run accepts that file too.
 
 A linelist can be built with two passwords, and the designer takes both
 off its \code{Main} sheet. \code{password} is what the file opens with, and every

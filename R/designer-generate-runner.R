@@ -38,10 +38,12 @@ GENERATION_FAILED_KEY <- "failed"
 run_designer_generate <- function(obtops, operation, stage, state) {
   paths <- obt_paths(obtops)
   name <- operation$args$name
-  output <- linelist_path(obtops, name)
+  candidates <- linelist_candidates(obtops, name)
   summary <- summary_path(paths$linelist, name)
 
-  check_output_free(output, operation$args$overwrite)
+  for (candidate in candidates) {
+    check_output_free(candidate, operation$args$overwrite)
+  }
 
   designer <- generate_designer(obtops, state)
   setup <- generate_setup(paths)
@@ -76,6 +78,12 @@ run_designer_generate <- function(obtops, operation, stage, state) {
 
   check_generation(ran, name = name)
 
+  output <- generated_linelist(
+    stage,
+    candidates,
+    built = summary_value(ran$summary, GENERATION_OUTPUT_KEY)
+  )
+
   produced <- c(
     linelist = stage_out(stage, output),
     summary = stage_out(stage, summary, required = FALSE),
@@ -90,6 +98,45 @@ run_designer_generate <- function(obtops, operation, stage, state) {
       counts = generation_counts(ran$summary)
     )
   )
+}
+
+#' The linelist the designer wrote
+#'
+#' The designer saves the linelist as `.xlsm`. An older designer saves it as
+#' `.xlsb`. The run looks first for the format the summary names, then tries
+#' the formats in the order of `LINELIST_EXTENSIONS`. An `.xlsb` that an
+#' earlier build left under the same name never shadows the new `.xlsm`.
+#'
+#' @param stage The staging record of the run.
+#' @param candidates The paths the linelist can sit at in the working folder,
+#'   as `linelist_candidates()` answers them.
+#' @param built The file the summary names, or `NA`.
+#'
+#' @return The path in the working folder. When neither file is there, the
+#'   first candidate, so `stage_out()` names the file the designer did not
+#'   write.
+#' @noRd
+generated_linelist <- function(stage, candidates, built) {
+  if (is_set(built)) {
+    named <- tolower(tools::file_ext(built))
+    candidates <- c(
+      candidates[tools::file_ext(candidates) == named],
+      candidates[tools::file_ext(candidates) != named]
+    )
+  }
+
+  staged <- vapply(
+    candidates,
+    function(candidate) stage_path(stage, candidate),
+    character(1)
+  )
+  there <- candidates[file.exists(staged)]
+
+  if (length(there) == 0) {
+    return(candidates[[1]])
+  }
+
+  there[[1]]
 }
 
 #' The designer the run reads
@@ -159,7 +206,7 @@ designer_on_disk <- function(obtops) {
   )
 
   found <- found[
-    tolower(tools::file_ext(found)) == CHANNEL_EXTENSION
+    tolower(tools::file_ext(found)) %in% CHANNEL_EXTENSIONS
   ]
 
   vapply(found, absolute_path, character(1), USE.NAMES = FALSE)

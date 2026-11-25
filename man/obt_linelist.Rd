@@ -32,10 +32,10 @@ linelist and the verbs that touch it. The linelist verbs
 
 \code{from} takes either of two things:
 \itemize{
-\item \strong{A linelist workbook}, ending in \code{.xlsb}. The recipe records the copy
-of that file into \verb{linelist/} in the working folder, and \code{folder} says
-where. The file itself is an input and stays as it is: the copy keeps its
-name and is what the verbs work on.
+\item \strong{A linelist workbook}, ending in \code{.xlsm} or \code{.xlsb}. The recipe records
+the copy of that file into \verb{linelist/} in the working folder, and
+\code{folder} says where. The file itself is an input and stays as it is: the
+copy keeps its name and is what the verbs work on.
 \item \strong{An \code{obt} recipe.} It narrows to a linelist one, keeping the working
 folder and the linelist operations it already holds. The recipe it came
 from is left as it was.
@@ -43,8 +43,10 @@ from is left as it was.
 
 A recipe narrowed from an \code{obt} names no linelist of its own. The run reads
 the one file under \verb{linelist/} in the working folder, so a linelist built
-by an earlier run is picked up. A folder holding more than one is refused,
-and naming the file with \code{from} is what settles it.
+by an earlier run is picked up. When \verb{<name>.xlsm} and \verb{<name>.xlsb} both
+sit there, the run counts one linelist and reads the \code{.xlsm}. A folder
+holding more than one is refused, and naming the file with \code{from} is what
+settles it.
 
 A linelist built with a password opens with that password, and every verb
 of the recipe opens the file. Give the password with the workbook, and the
@@ -56,7 +58,7 @@ Like every verb this one records and answers the recipe. Nothing is copied
 until \code{\link[=obt_commit]{obt_commit()}} runs.
 }
 \examples{
-linelist <- file.path(tempdir(), "measles-2026.xlsb")
+linelist <- file.path(tempdir(), "measles-2026.xlsm")
 invisible(file.create(linelist))
 
 obt_linelist(from = linelist, folder = file.path(tempdir(), "measles"))

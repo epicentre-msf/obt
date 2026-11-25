@@ -63,7 +63,7 @@ test_that("any other extension is refused", {
   folder <- withr::local_tempdir()
   path <- empty_file(folder, "content.csv")
 
-  expect_error(obt_setup(from = path, folder = folder), "\\.xlsb")
+  expect_error(obt_setup(from = path, folder = folder), "\\.xlsm.*\\.xlsb")
 })
 
 test_that("a setup workbook with no folder is refused", {
@@ -153,7 +153,6 @@ test_that("a value that is neither a recipe nor a path is refused", {
 test_that("the run copies the setup in twice, and keeps the name", {
   folder <- withr::local_tempdir()
   recipe <- setup_recipe(folder)
-  paths <- obt_paths(recipe)
 
   answer <- run_setup_add(
     recipe,
@@ -161,6 +160,7 @@ test_that("the run copies the setup in twice, and keeps the name", {
     stage = NULL,
     state = list()
   )
+  paths <- obt_paths(recipe)
 
   expect_true(file.exists(paths$setup_file))
   expect_true(
@@ -168,6 +168,55 @@ test_that("the run copies the setup in twice, and keeps the name", {
   )
   expect_identical(names(answer$produced), c("source", "setup"))
   expect_identical(answer$state$setup, paths$setup_file)
+})
+
+test_that("the working setup keeps the format of the file handed over", {
+  for (extension in c("xlsm", "xlsb")) {
+    folder <- withr::local_tempdir()
+    recipe <- setup_recipe(folder, extension = extension)
+
+    answer <- run_setup_add(
+      recipe,
+      recipe$operations[[1]],
+      stage = NULL,
+      state = list()
+    )
+
+    expect_identical(basename(answer$state$setup), paste0("setup.", extension))
+    expect_identical(obt_paths(recipe)$setup_file, answer$state$setup)
+  }
+})
+
+test_that("a working setup of the other format stops the run too", {
+  folder <- withr::local_tempdir()
+  first <- setup_recipe(folder, extension = "xlsb")
+  run_setup_add(first, first$operations[[1]], stage = NULL, state = list())
+
+  second <- setup_recipe(folder, extension = "xlsm")
+
+  expect_error(
+    run_setup_add(second, second$operations[[1]], stage = NULL, state = list()),
+    "already there"
+  )
+})
+
+test_that("overwrite replaces a working setup of the other format", {
+  folder <- withr::local_tempdir()
+  first <- setup_recipe(folder, extension = "xlsm")
+  run_setup_add(first, first$operations[[1]], stage = NULL, state = list())
+
+  second <- setup_recipe(folder, extension = "xlsb", overwrite = TRUE)
+  run_setup_add(second, second$operations[[1]], stage = NULL, state = list())
+
+  expect_identical(list.files(file.path(folder, "setup"), "^setup\\."), "setup.xlsb")
+  expect_identical(basename(obt_paths(second)$setup_file), "setup.xlsb")
+})
+
+test_that("an .xlsm and an .xlsb setup are both taken at the verb", {
+  folder <- withr::local_tempdir()
+
+  expect_true(is_obt_setup(setup_recipe(folder, extension = "xlsm")))
+  expect_true(is_obt_setup(setup_recipe(folder, extension = "xlsb")))
 })
 
 test_that("the file the user handed over is left as it was", {
@@ -262,6 +311,6 @@ test_that("the copy of the setup is what a run of the recipe writes", {
   expect_identical(answer$run$outcome, RUN_OK)
   expect_identical(
     unname(answer$operations[[1]]$result$produced[["setup"]]),
-    "setup/setup.xlsb"
+    "setup/setup.xlsm"
   )
 })
