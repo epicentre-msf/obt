@@ -1,4 +1,4 @@
-# obt (development version)
+# obt 0.0.2
 
 * OutbreakTools now ships its designer, setup, master setup and ribbon
   template as `.xlsm`. `obt_designer_add()` reads a release zip of `.xlsm`
